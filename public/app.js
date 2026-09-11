@@ -1,148 +1,264 @@
+import { renderEmpleadosPage, initEmpleadosPage } from '/empleados.js';
+import { renderCalendar } from '/calendario.js';
+import { renderConfiguracionPage, initConfiguracionPage, verificarRolOperador } from '/configuracion.js';
+import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { doc, getDoc, getDocs, updateDoc, collection, addDoc, query, where, orderBy, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { auth, db } from './firebase-config.js';
+
 // ==========================================
 // GESTOR DE VACACIONES - PROSEINET (app.js)
 // ==========================================
 
-const AppState = {
-    usuario: {
-        nombre: "Juan Pérez",
-        cargo: "Gerente de Operaciones",
-        avatarIniciales: "JP",
-        saldoDisponible: 15,
-        saldoTotal: 20
-    },
-    empleados: [
-        { id: 1, nombre: "Juan Pérez", cargo: "Gerente de Operaciones", depto: "Operaciones", iniciales: "JP", avatarBg: "linear-gradient(135deg, #dc2626, #991b1b)", saldoDisponible: 15, saldoTotal: 20, estado: "Trabajando" },
-        { id: 2, nombre: "Carlos Rodríguez", cargo: "Soporte Técnico", depto: "IT", iniciales: "CR", avatarBg: "linear-gradient(135deg, #f59e0b, #d97706)", saldoDisponible: 10, saldoTotal: 15, estado: "Trabajando" },
-        { id: 3, nombre: "Maria López", cargo: "Recursos Humanos", depto: "RH", iniciales: "ML", avatarBg: "linear-gradient(135deg, #10b981, #059669)", saldoDisponible: 12, saldoTotal: 20, estado: "Trabajando" },
-        { id: 4, nombre: "Alejandro Hernández", cargo: "Desarrollo", depto: "IT", iniciales: "AH", avatarBg: "linear-gradient(135deg, #3b82f6, #1d4ed8)", saldoDisponible: 15, saldoTotal: 20, estado: "Trabajando" },
-        { id: 5, nombre: "Sofia Fuentes", cargo: "Ventas", depto: "Ventas", iniciales: "SF", avatarBg: "linear-gradient(135deg, #8b5cf6, #6d28d9)", saldoDisponible: 10, saldoTotal: 15, estado: "Trabajando" },
-        { id: 6, nombre: "Luis Gómez", cargo: "Infraestructura", depto: "IT", iniciales: "LG", avatarBg: "linear-gradient(135deg, #dc2626, #b91c1c)", saldoDisponible: 4, saldoTotal: 20, estado: "En Vacaciones" },
-        { id: 7, nombre: "Ana Martínez", cargo: "Finanzas", depto: "Finanzas", iniciales: "AM", avatarBg: "linear-gradient(135deg, #0284c7, #0369a1)", saldoDisponible: 14, saldoTotal: 20, estado: "Trabajando" },
-        { id: 8, nombre: "Daniel Torres", cargo: "Marketing", depto: "Ventas", iniciales: "DT", avatarBg: "linear-gradient(135deg, #059669, #047857)", saldoDisponible: 18, saldoTotal: 20, estado: "Trabajando" }
-    ],
-    solicitudes: [
-        {
-            id: 1,
-            empleado: "Carlos Rodríguez",
-            cargo: "Soporte Técnico",
-            iniciales: "CR",
-            avatarBg: "linear-gradient(135deg, #f59e0b, #d97706)",
-            fechaInicio: "2026-08-18",
-            fechaFin: "2026-08-25",
-            fechasTexto: "18 Ago - 25 Ago 2026",
-            dias: 6,
-            tipo: "Vacaciones Pagadas",
-            motivo: "Viaje de vacaciones familiares en la costa.",
-            estado: "pendiente"
-        },
-        {
-            id: 2,
-            empleado: "Maria López",
-            cargo: "Recursos Humanos",
-            iniciales: "ML",
-            avatarBg: "linear-gradient(135deg, #10b981, #059669)",
-            fechaInicio: "2026-09-01",
-            fechaFin: "2026-09-10",
-            fechasTexto: "01 Sep - 10 Sep 2026",
-            dias: 8,
-            tipo: "Vacaciones Pagadas",
-            motivo: "Descanso programado del periodo 2026.",
-            estado: "aprobado"
-        },
-        {
-            id: 3,
-            empleado: "Alejandro Hernández",
-            cargo: "Desarrollo",
-            iniciales: "AH",
-            avatarBg: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
-            fechaInicio: "2026-10-12",
-            fechaFin: "2026-10-16",
-            fechasTexto: "12 Oct - 16 Oct 2026",
-            dias: 5,
-            tipo: "Permiso Personal",
-            motivo: "Trámites personales y asuntos familiares.",
-            estado: "aprobado"
-        },
-        {
-            id: 4,
-            empleado: "Sofia Fuentes",
-            cargo: "Ventas",
-            iniciales: "SF",
-            avatarBg: "linear-gradient(135deg, #8b5cf6, #6d28d9)",
-            fechaInicio: "2026-11-02",
-            fechaFin: "2026-11-06",
-            fechasTexto: "02 Nov - 06 Nov 2026",
-            dias: 5,
-            tipo: "Vacaciones Pagadas",
-            motivo: "Solicitud de descanso anual.",
-            estado: "pendiente"
-        }
-    ],
-    notificaciones: [
-        { id: 1, texto: "Carlos Rodríguez solicitó 6 días de vacaciones", fecha: "Hace 2 horas", leida: false },
-        { id: 2, texto: "La solicitud de María López fue aprobada", fecha: "Ayer", leida: true }
-    ],
+export const nombresFeriados = {
+    '2026-01-01': 'Año Nuevo',
+    '2026-02-02': 'Constitución Mexicana',
+    '2026-03-16': 'Natalicio Benito Juárez',
+    '2026-05-01': 'Día del Trabajo',
+    '2026-09-16': 'Día de la Independencia',
+    '2026-11-16': 'Revolución Mexicana',
+    '2026-12-25': 'Navidad',
+    '2027-01-01': 'Año Nuevo',
+    '2027-02-01': 'Constitución Mexicana',
+    '2027-03-15': 'Natalicio Benito Juárez',
+    '2027-05-01': 'Día del Trabajo',
+    '2027-09-16': 'Día de la Independencia',
+    '2027-11-15': 'Revolución Mexicana',
+    '2027-12-25': 'Navidad'
+};
+
+export const FERIADOS_OFICIALES_MX = Object.keys(nombresFeriados);
+
+export const AppState = {
+    usuario: {},
+    empleados: [],
+    solicitudes: [],
+    notificaciones: [],
     filtroActual: "all"
 };
 
-// --- PERSISTENCIA CON LOCALSTORAGE ---
-function guardarEstado() {
+export function calcularDiasDerechoLFT(aniosAntiguedad) {
+    if (aniosAntiguedad < 1) return 0;
+    if (aniosAntiguedad === 1) return 12;
+    if (aniosAntiguedad === 2) return 14;
+    if (aniosAntiguedad === 3) return 16;
+    if (aniosAntiguedad === 4) return 18;
+    if (aniosAntiguedad === 5) return 20;
+    if (aniosAntiguedad >= 6 && aniosAntiguedad <= 10) return 22;
+    if (aniosAntiguedad >= 11 && aniosAntiguedad <= 15) return 24;
+    if (aniosAntiguedad >= 16 && aniosAntiguedad <= 20) return 26;
+    if (aniosAntiguedad >= 21 && aniosAntiguedad <= 25) return 28;
+    if (aniosAntiguedad >= 26 && aniosAntiguedad <= 30) return 30;
+    return 32;
+}
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        if (!window.location.href.includes('login')) {
+            window.location.href = '/login.html';
+        }
+    } else {
+        console.log("Usuario autenticado:", user.email);
+
+        await cargarPerfilUsuario(user.uid);
+        suscribirSolicitudesFirestore();
+        await cargarEmpleadosDesdeFirestore();
+        inicializarUI();
+    }
+});
+
+export async function cargarPerfilUsuario(uid) {
     try {
-        localStorage.setItem('ProseinetAppState', JSON.stringify(AppState));
-    } catch (e) {
-        console.error('Error al guardar estado en localStorage:', e);
+        const userRef = doc(db, "usuarios", uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+
+            let aniosAntiguedad = 0;
+            let mesesAntiguedad = 0;
+
+            if (data.fechaIngreso) {
+                const fechaIng = new Date(data.fechaIngreso + 'T00:00:00');
+                const hoy = new Date();
+
+                let edad = hoy.getFullYear() - fechaIng.getFullYear();
+                const m = hoy.getMonth() - fechaIng.getMonth();
+                if (m < 0 || (m === 0 && hoy.getDate() < fechaIng.getDate())) {
+                    edad--;
+                }
+                aniosAntiguedad = Math.max(0, edad);
+
+                const diferenciaMs = hoy.getTime() - fechaIng.getTime();
+                mesesAntiguedad = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24 * 30.44));
+            }
+
+            let saldoDisponible = data.saldoDisponible ?? 0;
+            let saldoTotal = data.saldoTotal ?? 0;
+            let ultimoAnioAcreditado = data.ultimoAnioAcreditado ?? 0;
+            let requiereActualizacionBD = false;
+
+            // Empleado ha cumplido 1 año o más desde su ingreso laboral
+            if (data.fechaIngreso && aniosAntiguedad > 0) {
+                const diasCorrespondientes = calcularDiasDerechoLFT(aniosAntiguedad);
+
+                if (ultimoAnioAcreditado === 0 || saldoTotal > diasCorrespondientes) {
+                    const diasTomados = Math.max(0, (data.saldoTotal || 0) - (data.saldoDisponible ?? (data.saldoTotal || 0)));
+                    saldoTotal = diasCorrespondientes;
+                    saldoDisponible = Math.max(0, diasCorrespondientes - diasTomados);
+                    ultimoAnioAcreditado = aniosAntiguedad;
+                    requiereActualizacionBD = true;
+                } else if (aniosAntiguedad > ultimoAnioAcreditado) {
+                    const diasAnteriores = calcularDiasDerechoLFT(ultimoAnioAcreditado);
+                    const incremento = Math.max(0, diasCorrespondientes - diasAnteriores);
+                    saldoTotal = diasCorrespondientes;
+                    saldoDisponible = saldoDisponible + incremento;
+                    ultimoAnioAcreditado = aniosAntiguedad;
+                    requiereActualizacionBD = true;
+                }
+            }
+
+            if (requiereActualizacionBD) {
+                await updateDoc(userRef, {
+                    saldoDisponible: saldoDisponible,
+                    saldoTotal: saldoTotal,
+                    ultimoAnioAcreditado: ultimoAnioAcreditado
+                });
+                console.log(`Se detectó Aniversario. Se sumaron nuevos dias al saldo.`);
+            }
+
+            AppState.usuario = {
+                uid: uid,
+                nombre: data.nombre,
+                cargo: data.cargo,
+                area: data.area,
+                iniciales: data.avatarIniciales || getIniciales(data.nombre),
+                saldoDisponible: saldoDisponible,
+                saldoTotal: saldoTotal,
+                rol: data.rol,
+                fechaIngreso: data.fechaIngreso || "No registrada"
+            };
+
+            console.log("Perfil cargado correctamente:", AppState.usuario);
+        }
+    } catch (error) {
+        console.error("Error al cargar perfil de Firestore:", error);
     }
 }
 
-function cargarEstado() {
+export function getIniciales(nombre = "") {
+    if (!nombre) return 'US';
+    return nombre.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'US';
+}
+
+export async function cargarEmpleadosDesdeFirestore() {
     try {
-        const saved = localStorage.getItem('ProseinetAppState');
-        if (saved) {
-            const data = JSON.parse(saved);
-            if (data.usuario) AppState.usuario = data.usuario;
-            if (data.solicitudes) AppState.solicitudes = data.solicitudes;
-            if (data.notificaciones) AppState.notificaciones = data.notificaciones;
-            if (data.empleados) AppState.empleados = data.empleados;
+        const q = query(collection(db, "usuarios"));
+        onSnapshot(q, (snapshot) => {
+            AppState.empleados = snapshot.docs.map(docSnap => {
+                const data = docSnap.data();
+                const nombre = data.nombre || 'Sin Nombre';
+                const cargo = data.cargo || 'Colaborador';
+                const area = data.area || data.depto || 'General';
+                const saldoTotal = data.saldoTotal || 0;
+                const saldoDisponible = data.saldoDisponible ?? saldoTotal;
+                const avatarIniciales = data.avatarIniciales || getIniciales(nombre);
+                const avatarBg = data.avatarBg || 'linear-gradient(135deg, #dc2626, #991b1b)';
+
+                return {
+                    id: docSnap.id,
+                    ...data,
+                    nombre,
+                    cargo,
+                    area,
+                    depto: area,
+                    saldoTotal,
+                    saldoDisponible,
+                    avatarIniciales,
+                    avatarBg
+                };
+            });
+
+            console.log("Empleados cargados desde Firestore:", AppState.empleados);
+
+            if (document.getElementById('empleadosGrid')) {
+                renderEmpleadosPage();
+            }
+
+            if (document.getElementById('configuracionContainer')) {
+                renderConfiguracionPage();
+            }
+        }, (error) => {
+            console.error("Error en listener de empleados:", error);
+        });
+    } catch (error) {
+        console.error("Error al cargar empleados desde Firestore", error);
+    }
+}
+
+function suscribirSolicitudesFirestore() {
+    const q = query(collection(db, "solicitudes"));
+    onSnapshot(q, (snapshot) => {
+        AppState.solicitudes = snapshot.docs.map(docSnap => ({
+            idFirestore: docSnap.id,
+            ...docSnap.data()
+        }));
+
+        renderRequestsTable();
+        updateKPIs();
+        renderProximasAusencias();
+        renderProximoFeriado();
+        notificaciones();
+        cargarInfoUsuarios();
+        if (document.getElementById('calendarBody')) {
+            renderCalendar();
         }
-    } catch (e) {
-        console.error('Error al cargar estado desde localStorage:', e);
+    }, (error) => {
+        console.error("Error en listener de solicitudes:", error);
+    });
+}
+
+function inicializarUI() {
+    console.log('Inicializando App de Vacaciones Proseinet...');
+
+    cargarInfoUsuarios();
+    initModalPerfil();
+    updateKPIs();
+    notificaciones();
+
+    if (document.getElementById('calendarBody')) {
+        renderCalendar();
+    }
+
+    if (document.getElementById('requestsTableBody')) {
+        renderRequestsTable();
+        initTableFilters();
+        initVacationCalculator();
+        initDetailModal();
+        initBuscadorEmpleado();
+        renderProximasAusencias();
+        renderProximoFeriado();
+    }
+
+    if (document.getElementById('empleadosGrid')) {
+        renderEmpleadosPage();
+    }
+
+    if (document.getElementById('configuracionContainer')) {
+        initConfiguracionPage();
+        renderConfiguracionPage();
     }
 }
 
 // Función para cerrar sesión
-function cerrarSesion() {
+window.cerrarSesion = async function () {
     console.log('Cerrando Sesión...');
-    window.location.href = '/login.html';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('Inicializando App de Vacaciones Proseinet...');
-
-    cargarEstado();
-
-    renderRequestsTable();
-    updateKPIs();
-    notificaciones();
-    initBuscadorEmpleado();
-
-    // Inicializar vistas secundarias
-    renderEmpleadosPage();
-    initEmpleadosPage();
-
-    // Inicializar gráficos y componentes
-    initVacationChart();
-    initTableFilters();
-    initVacationCalculator();
-    initDetailModal();
-
-    const btnToggleSidebar = document.getElementById('btnToggleSidebar');
-    const mainSidebar = document.getElementById('mainSidebar');
-    if (btnToggleSidebar && mainSidebar) {
-        btnToggleSidebar.addEventListener('click', () => {
-            mainSidebar.classList.toggle('show');
-        });
+    try {
+        await signOut(auth);
+        window.location.href = '/login.html';
+    } catch (error) {
+        console.error('Error al cerrar sesión:', error);
     }
-});
+}
 
 // --- RENDERIZADO DINÁMICO DE LA TABLA DE SOLICITUDES ---
 function renderRequestsTable(filtro = AppState.filtroActual) {
@@ -176,32 +292,32 @@ function renderRequestsTable(filtro = AppState.filtroActual) {
         } else if (req.estado === 'aprobado') {
             badgeHtml = `<span class="badge-status badge-aprobado"><i class="fa-solid fa-circle-check me-1"></i> Aprobada</span>`;
         } else if (req.estado === 'rechazado') {
-            badgeHtml = `<span class="badge-status badge-rechazado text-danger bg-danger-subtle"><i class="fa-solid fa-circle-xmark me-1"></i> Rechazada</span>`;
+            badgeHtml = `<span class="badge-status badge-rechazado"><i class="fa-solid fa-circle-xmark me-1"></i> Rechazada</span>`;
         }
 
         const tr = document.createElement('tr');
         tr.setAttribute('data-status', req.estado);
         tr.innerHTML = `
             <td>
-              <div class="d-flex align-items-center gap-2">
-                <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.8rem; background: ${req.avatarBg || 'var(--primary-gradient)'};">${req.iniciales}</div>
+                <div class="d-flex align-items-center gap-2">
+                <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 0.8rem; background: ${req.avatarBg || 'var(--primary-gradient)'};">${req.iniciales || 'US'}</div>
                 <div>
-                  <strong class="d-block text-dark lh-1">${req.empleado}</strong>
-                  <small class="text-muted" style="font-size: 0.75rem;">${req.cargo}</small>
+                    <strong class="d-block text-dark lh-1">${req.empleado}</strong>
+                    <small class="text-muted" style="font-size: 0.75rem;">${req.cargo}</small>
                 </div>
-              </div>
+                </div>
             </td>
             <td><strong>${req.fechasTexto}</strong></td>
             <td><span class="fw-bold">${req.dias}</span> días</td>
             <td>${badgeHtml}</td>
             <td class="text-end">
-              <button class="btn btn-sm ${req.estado === 'pendiente' ? 'btn-proseinet-light' : 'btn-light'} py-1 px-2 text-muted btn-ver-detalle" 
-                      data-id="${req.id}" 
-                      title="Ver o Revisar Solicitud">
+                <button class="btn btn-sm ${req.estado === 'pendiente' ? 'btn-proseinet-light' : 'btn-light'} py-1 px-2 text-muted btn-ver-detalle" 
+                        data-id="${req.idFirestore}"
+                        title="Ver o Revisar Solicitud">
                 <i class="fa-solid ${req.estado === 'pendiente' ? 'fa-eye text-danger' : 'fa-ellipsis-vertical'}"></i>
-              </button>
+                </button>
             </td>
-        `;
+            `;
         tableBody.appendChild(tr);
     });
 }
@@ -221,10 +337,12 @@ function updateKPIs() {
     const sidebarProgressBar = document.getElementById('sidebarProgressBar');
     const sidebarSaldoTexto = document.getElementById('sidebarSaldoTexto');
 
-    const pct = Math.round((AppState.usuario.saldoDisponible / AppState.usuario.saldoTotal) * 100);
+    const total = AppState.usuario.saldoTotal || 0;
+    const disponible = AppState.usuario.saldoDisponible ?? total;
+    const pct = Math.round((disponible / total) * 100);
 
-    if (sidebarBadgeSaldo) sidebarBadgeSaldo.textContent = `${AppState.usuario.saldoDisponible} Días`;
-    if (sidebarSaldoTexto) sidebarSaldoTexto.textContent = `${AppState.usuario.saldoDisponible} de ${AppState.usuario.saldoTotal} días disponibles`;
+    if (sidebarBadgeSaldo) sidebarBadgeSaldo.textContent = `${disponible} Días`;
+    if (sidebarSaldoTexto) sidebarSaldoTexto.textContent = `${disponible} de ${total} días disponibles`;
     if (sidebarProgressBar) {
         sidebarProgressBar.style.width = `${pct}%`;
         sidebarProgressBar.setAttribute('aria-valuenow', pct);
@@ -233,180 +351,14 @@ function updateKPIs() {
     const pendientesCount = AppState.solicitudes.filter(s => s.estado === 'pendiente').length;
     const aprobadasCount = AppState.solicitudes.filter(s => s.estado === 'aprobado').length;
 
-    const kpiPendientes = document.getElementById('kpiPendientes');
-    if (kpiPendientes) kpiPendientes.textContent = pendientesCount;
+    const hoyStr = new Date().toISOString().split('T')[0];
+    const enVacacionesHoy = AppState.solicitudes.filter(s => {
+        return s.estado === 'aprobado' && s.fechaInicio <= hoyStr && s.fechaFin >= hoyStr;
+    }).length;
 
-    const kpiAprobadas = document.getElementById('kpiAprobadas');
-    if (kpiAprobadas) kpiAprobadas.textContent = aprobadasCount;
-}
-
-// --- RENDERIZADO DE LA PÁGINA DE EMPLEADOS ---
-function renderEmpleadosPage(filtroDepto = 'all', searchQuery = '') {
-    const grid = document.getElementById('empleadosGrid');
-    if (!grid) return;
-
-    grid.innerHTML = '';
-
-    const filtrados = AppState.empleados.filter(emp => {
-        const coincideDepto = (filtroDepto === 'all' || emp.depto === filtroDepto);
-        const coincideBusqueda = emp.nombre.toLowerCase().includes(searchQuery.toLowerCase()) || emp.cargo.toLowerCase().includes(searchQuery.toLowerCase());
-        return coincideDepto && coincideBusqueda;
-    });
-
-    if (filtrados.length === 0) {
-        grid.innerHTML = `
-            <div class="col-12 text-center py-5 text-muted">
-                <i class="fa-solid fa-user-slash fs-2 mb-2 d-block opacity-50"></i>
-                No se encontraron empleados en esta categoría o búsqueda.
-            </div>
-        `;
-        return;
-    }
-
-    filtrados.forEach(emp => {
-        const pct = Math.round((emp.saldoDisponible / emp.saldoTotal) * 100);
-        const col = document.createElement('div');
-        col.className = 'col-12 col-md-6 col-xl-4';
-        col.innerHTML = `
-            <div class="p-4 rounded-4 bg-white border shadow-sm h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="avatar-circle" style="width: 46px; height: 46px; font-size: 1rem; background: ${emp.avatarBg};">${emp.iniciales}</div>
-                            <div>
-                                <strong class="d-block text-dark fs-6 lh-1 mb-1">${emp.nombre}</strong>
-                                <small class="text-muted d-block" style="font-size: 0.78rem;">${emp.cargo}</small>
-                            </div>
-                        </div>
-                        <span class="badge ${emp.estado === 'En Vacaciones' ? 'bg-warning text-dark' : 'bg-success-subtle text-success'} rounded-pill" style="font-size: 0.7rem;">${emp.estado}</span>
-                    </div>
-
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <span class="badge bg-light text-secondary border fw-normal" style="font-size: 0.75rem;"><i class="fa-solid fa-building me-1"></i> ${emp.depto}</span>
-                        <small class="fw-bold text-dark" style="font-size: 0.8rem;">Saldo: ${emp.saldoDisponible} / ${emp.saldoTotal} días</small>
-                    </div>
-
-                    <div class="progress mb-3" style="height: 6px;">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: ${pct}%;" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>
-
-                <div class="pt-2 border-top d-flex justify-content-between align-items-center">
-                    <small class="text-muted" style="font-size: 0.72rem;">Proseinet 2026</small>
-                    <button class="btn btn-sm btn-outline-danger py-1 px-3 fw-semibold" style="font-size: 0.78rem;">Ver Detalle</button>
-                </div>
-            </div>
-        `;
-        grid.appendChild(col);
-    });
-}
-
-function initEmpleadosPage() {
-    const filterBtns = document.querySelectorAll('.filter-depto-btn');
-    const inputSearch = document.getElementById('inputBuscarEmpleadoDirectorio');
-
-    let currentDepto = 'all';
-    let currentSearch = '';
-
-    if (filterBtns.length > 0) {
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                filterBtns.forEach(b => {
-                    b.classList.remove('active', 'btn-proseinet');
-                    b.classList.add('btn-light');
-                });
-                btn.classList.remove('btn-light');
-                btn.classList.add('active', 'btn-proseinet');
-
-                currentDepto = btn.getAttribute('data-depto');
-                renderEmpleadosPage(currentDepto, currentSearch);
-            });
-        });
-    }
-
-    if (inputSearch) {
-        inputSearch.addEventListener('keyup', (e) => {
-            currentSearch = e.target.value;
-            renderEmpleadosPage(currentDepto, currentSearch);
-        });
-    }
-}
-
-function initVacationChart() {
-    const ctx = document.getElementById('vacationChart');
-    if (!ctx) return;
-
-    const chartCtx = ctx.getContext('2d');
-    const gradient = chartCtx.createLinearGradient(0, 0, 0, 250);
-    gradient.addColorStop(0, 'rgba(220, 38, 38, 0.85)');
-    gradient.addColorStop(1, 'rgba(150, 24, 24, 0.85)');
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
-            datasets: [{
-                label: 'Días de Vacaciones Tomados',
-                data: [14, 10, 18, 24, 20, 38, 45, 32, 22, 16, 12, 30],
-                backgroundColor: gradient,
-                borderColor: '#dc2626',
-                borderWidth: 0,
-                borderRadius: 6,
-                borderSkipped: false,
-                barThickness: 56
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a',
-                    titleFont: { family: 'Montserrat', size: 13, weight: 'bold' },
-                    bodyFont: { family: 'Montserrat', size: 12 },
-                    padding: 12,
-                    cornerRadius: 8,
-                    displayColors: false,
-                    callbacks: {
-                        label: function (context) {
-                            return `${context.parsed.y} días disfrutados por el equipo`;
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { font: { family: 'Montserrat', size: 11, weight: '600' }, color: '#64748b' }
-                },
-                y: {
-                    grid: { color: '#f1f5f9' },
-                    ticks: { font: { family: 'Montserrat', size: 11 }, color: '#64748b', stepSize: 10 },
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-function initTableFilters() {
-    const filterBtns = document.querySelectorAll('.filter-btn');
-
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterBtns.forEach(b => {
-                b.classList.remove('active');
-                b.classList.add('btn-light');
-            });
-
-            btn.classList.remove('btn-light');
-            btn.classList.add('active');
-
-            const filterValue = btn.getAttribute('data-filter');
-            renderRequestsTable(filterValue);
-        });
-    });
+    if (document.getElementById('kpiPendientes')) document.getElementById('kpiPendientes').textContent = pendientesCount;
+    if (document.getElementById('kpiAprobadas')) document.getElementById('kpiAprobadas').textContent = aprobadasCount;
+    if (document.getElementById('kpiEnVacaciones')) document.getElementById('kpiEnVacaciones').innerHTML = `${enVacacionesHoy} <span class="fs-6 text-muted font-normal">personas</span>`;
 }
 
 function initVacationCalculator() {
@@ -417,8 +369,8 @@ function initVacationCalculator() {
 
     function calcularDias() {
         if (fechaInicio && fechaFin && fechaInicio.value && fechaFin.value) {
-            const start = new Date(fechaInicio.value);
-            const end = new Date(fechaFin.value);
+            const start = new Date(fechaInicio.value + 'T00:00:00');
+            const end = new Date(fechaFin.value + 'T00:00:00');
 
             if (end >= start) {
                 let count = 0;
@@ -426,16 +378,17 @@ function initVacationCalculator() {
 
                 while (curDate <= end) {
                     const dayOfWeek = curDate.getDay();
-                    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                    const dateString = curDate.toISOString().split('T')[0];
+                    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !FERIADOS_OFICIALES_MX.includes(dateString)) {
                         count++;
                     }
                     curDate.setDate(curDate.getDate() + 1);
                 }
 
-                labelDias.textContent = `${count} ${count === 1 ? 'Día laborable' : 'Días laborables'}`;
+                if (labelDias) labelDias.textContent = `${count} ${count === 1 ? 'Día laborable' : 'Días laborables'}`;
                 return count;
             } else {
-                labelDias.textContent = 'Fecha final inválida';
+                if (labelDias) labelDias.textContent = 'Fecha final inválida';
                 return 0;
             }
         }
@@ -448,17 +401,17 @@ function initVacationCalculator() {
     }
 
     if (form) {
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const diasSolicitados = calcularDias();
             if (diasSolicitados <= 0) {
-                alert('Por favor selecciona un rango de fechas válido.');
+                Swal.fire('Error', 'Por favor selecciona un rango de fechas válido y laborable.', 'error');
                 return;
             }
 
             if (diasSolicitados > AppState.usuario.saldoDisponible) {
-                alert(`No tienes suficiente saldo de vacaciones. Solicitaste ${diasSolicitados} días y te quedan ${AppState.usuario.saldoDisponible} días.`);
+                Swal.fire('Saldo insuficiente', `Solicitaste ${diasSolicitados} días y solo dispones de ${AppState.usuario.saldoDisponible} días.`, 'error');
                 return;
             }
 
@@ -471,13 +424,14 @@ function initVacationCalculator() {
             const options = { day: '2-digit', month: 'short' };
             const dInicio = new Date(fInicio).toLocaleDateString('es-ES', options);
             const dFin = new Date(fFin).toLocaleDateString('es-ES', options);
-            const fechasTexto = `${dInicio} - ${dFin} 2026`;
+            const año = new Date(fInicio + 'T00:00:00').getFullYear();
+            const fechasTexto = `${dInicio} - ${dFin} ${año}`;
 
             const nuevaSolicitud = {
-                id: Date.now(),
+                uid_empleado: AppState.usuario.uid,
                 empleado: AppState.usuario.nombre,
                 cargo: AppState.usuario.cargo,
-                iniciales: AppState.usuario.avatarIniciales,
+                iniciales: AppState.usuario.iniciales,
                 avatarBg: "linear-gradient(135deg, #dc2626, #991b1b)",
                 fechaInicio: fInicio,
                 fechaFin: fFin,
@@ -485,170 +439,397 @@ function initVacationCalculator() {
                 dias: diasSolicitados,
                 tipo: tipoTexto,
                 motivo: motivo,
-                estado: "pendiente"
+                estado: "pendiente",
+                creadoEn: new Date().toISOString()
             };
 
-            AppState.solicitudes.unshift(nuevaSolicitud);
+            try {
+                await addDoc(collection(db, "solicitudes"), nuevaSolicitud);
 
-            AppState.notificaciones.unshift({
-                id: Date.now(),
-                texto: `Enviaste una solicitud de ${diasSolicitados} días de vacaciones.`,
-                fecha: "Justo ahora",
-                leida: false
-            });
+                AppState.notificaciones.unshift({
+                    id: Date.now(),
+                    texto: `Enviaste una solicitud de ${diasSolicitados} días.`,
+                    fecha: "Justo ahora",
+                    leida: false
+                });
 
-            guardarEstado();
+                const modalEl = document.getElementById('modalNuevaSolicitud');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                form.reset();
+                if (labelDias) labelDias.textContent = '0 Días';
 
-            renderRequestsTable();
-            updateKPIs();
-            notificaciones();
+                Swal.fire('Éxito', '¡Tu solicitud de vacaciones fue registrada exitosamente!', 'success');
 
-            const modalEl = document.getElementById('modalNuevaSolicitud');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
-
-            form.reset();
-            if (labelDias) labelDias.textContent = '0 Días';
-
-            alert('¡Tu solicitud de vacaciones fue registrada exitosamente!');
+            } catch (error) {
+                console.error("Error al guardar la solicitud:", error);
+                Swal.fire('Error', 'Hubo un error al registrar tu solicitud.', 'error');
+            }
         });
     }
+}
+
+let solicitudSeleccionada = null;
+
+function mostrarDetalleSolicitud(solicitud) {
+    if (!solicitud) return;
+    solicitudSeleccionada = solicitud;
+
+    const modalEl = document.getElementById('modalDetalleSolicitud');
+    if (!modalEl) return;
+
+    if (document.getElementById('detalleEmpleado')) document.getElementById('detalleEmpleado').textContent = solicitud.empleado || '-';
+    if (document.getElementById('detalleCargo')) document.getElementById('detalleCargo').textContent = solicitud.cargo || '-';
+    if (document.getElementById('detalleFechas')) document.getElementById('detalleFechas').textContent = solicitud.fechasTexto || `${solicitud.fechaInicio} - ${solicitud.fechaFin}`;
+    if (document.getElementById('detalleDias')) document.getElementById('detalleDias').textContent = `${solicitud.dias} días`;
+    if (document.getElementById('detalleTipo')) document.getElementById('detalleTipo').textContent = solicitud.tipo || 'Vacaciones';
+    if (document.getElementById('detalleMotivo')) document.getElementById('detalleMotivo').textContent = solicitud.motivo || 'Sin observaciones.';
+
+    const avatar = document.getElementById('detalleAvatar');
+    if (avatar) {
+        avatar.textContent = solicitud.iniciales || (solicitud.empleado ? solicitud.empleado.substring(0, 2).toUpperCase() : 'US');
+        avatar.style.background = solicitud.avatarBg || 'var(--primary-gradient)';
+    }
+
+    const estadoLower = (solicitud.estado || 'pendiente').toString().trim().toLowerCase();
+
+    const estadoBadge = document.getElementById('detalleEstadoBadge');
+    if (estadoBadge) {
+        if (estadoLower === 'pendiente') {
+            estadoBadge.innerHTML = `<span class="badge-status badge-pendiente"><i class="fa-solid fa-clock me-1"></i> Pendiente de Aprobación</span>`;
+        } else if (estadoLower === 'aprobado' || estadoLower === 'aprobada') {
+            estadoBadge.innerHTML = `<span class="badge-status badge-aprobado"><i class="fa-solid fa-circle-check me-1"></i> Aprobada</span>`;
+        } else if (estadoLower.includes('cancel')) {
+            estadoBadge.innerHTML = `<span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Cancelada</span>`;
+        } else {
+            estadoBadge.innerHTML = `<span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Rechazada</span>`;
+        }
+    }
+
+    const detalleAcciones = document.getElementById('detalleAcciones');
+    const btnAprobar = document.getElementById('btnAprobarSolicitud');
+    const btnCancelar = document.getElementById('btnCancelarSolicitud');
+
+    const esOperador = verificarRolOperador();
+    console.log('DEBUG rol:', AppState.usuario.rol, '| esOperador:', esOperador);
+    const esMiSolicitud = AppState.usuario && (
+        (solicitud.uid_empleado && solicitud.uid_empleado === AppState.usuario.uid) ||
+        (solicitud.empleado && AppState.usuario.nombre && solicitud.empleado.trim().toLowerCase() === AppState.usuario.nombre.trim().toLowerCase())
+    );
+
+    console.log('DEBUG detalleAcciones: ', detalleAcciones, '| estadoLower:', estadoLower, '| esMiSolicitud', esMiSolicitud);
+    if (detalleAcciones) {
+        if (esOperador) {
+            detalleAcciones.style.display = 'flex';
+
+            if (estadoLower === 'pendiente') {
+                if (btnAprobar) {
+                    btnAprobar.style.display = 'inline-block';
+                    btnAprobar.disabled = false;
+                    btnAprobar.className = 'btn btn-success fw-semibold';
+                    btnAprobar.innerHTML = '<i class="fa-solid fa-check me-1"></i> Aprobar Solicitud';
+                }
+                if (btnCancelar) {
+                    btnCancelar.style.display = 'inline-block';
+                    btnCancelar.disabled = false;
+                    btnCancelar.className = 'btn btn-danger fw-semibold';
+                    btnCancelar.innerHTML = 'Cancelar Solicitud';
+                }
+            } else if (estadoLower === 'aprobado' || estadoLower === 'aprobada') {
+                if (btnAprobar) {
+                    btnAprobar.style.display = 'inline-block';
+                    btnAprobar.disabled = true;
+                    btnAprobar.className = 'btn btn-success fw-semibold';
+                    btnAprobar.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i> Aprobada';
+                }
+                if (btnCancelar) {
+                    btnCancelar.style.display = 'none';
+                }
+            } else {
+                if (btnAprobar) {
+                    btnAprobar.style.display = 'inline-block';
+                    btnAprobar.disabled = true;
+                    btnAprobar.className = 'btn btn-secondary fw-semibold';
+                    btnAprobar.innerHTML = `<i class="fa-solid fa-circle-xmark me-1"></i> ${estadoLower.includes('cancel') ? 'Cancelada' : 'Rechazada'}`;
+                }
+                if (btnCancelar) {
+                    btnCancelar.style.display = 'none';
+                }
+            }
+        } else if (esMiSolicitud && estadoLower === 'pendiente') {
+            detalleAcciones.style.display = 'flex';
+            if (btnAprobar) btnAprobar.style.display = 'none';
+            if (btnCancelar) {
+                btnCancelar.style.display = 'inline-block';
+                btnCancelar.disabled = false;
+                btnCancelar.className = 'btn btn-danger fw-semibold';
+                btnCancelar.innerHTML = 'Cancelar Solicitud';
+            }
+        } else {
+            detalleAcciones.style.display = 'none';
+            if (btnAprobar) btnAprobar.style.display = 'none';
+            if (btnCancelar) btnCancelar.style.display = 'none';
+        }
+    }
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    bsModal.show();
 }
 
 function initDetailModal() {
     const tableBody = document.getElementById('requestsTableBody');
     const modalEl = document.getElementById('modalDetalleSolicitud');
-    if (!tableBody || !modalEl) return;
+    if (!modalEl) return;
 
-    let solicitudSeleccionada = null;
+    if (tableBody) {
+        tableBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-ver-detalle');
+            if (!btn) return;
 
-    tableBody.addEventListener('click', (e) => {
-        const btn = e.target.closest('.btn-ver-detalle');
-        if (!btn) return;
-
-        const id = parseInt(btn.getAttribute('data-id'));
-        solicitudSeleccionada = AppState.solicitudes.find(s => s.id === id);
-
-        if (!solicitudSeleccionada) return;
-
-        document.getElementById('detalleEmpleado').textContent = solicitudSeleccionada.empleado;
-        document.getElementById('detalleCargo').textContent = solicitudSeleccionada.cargo;
-        document.getElementById('detalleFechas').textContent = solicitudSeleccionada.fechasTexto;
-        document.getElementById('detalleDias').textContent = `${solicitudSeleccionada.dias} días`;
-        document.getElementById('detalleTipo').textContent = solicitudSeleccionada.tipo;
-        document.getElementById('detalleMotivo').textContent = solicitudSeleccionada.motivo || 'Sin observaciones.';
-
-        const avatar = document.getElementById('detalleAvatar');
-        if (avatar) {
-            avatar.textContent = solicitudSeleccionada.iniciales;
-            avatar.style.background = solicitudSeleccionada.avatarBg || 'var(--primary-gradient)';
-        }
-
-        const estadoBadge = document.getElementById('detalleEstadoBadge');
-        if (solicitudSeleccionada.estado === 'pendiente') {
-            estadoBadge.innerHTML = `<span class="badge-status badge-pendiente"><i class="fa-solid fa-clock me-1"></i> Pendiente de Aprobación</span>`;
-        } else if (solicitudSeleccionada.estado === 'aprobado') {
-            estadoBadge.innerHTML = `<span class="badge-status badge-aprobado"><i class="fa-solid fa-circle-check me-1"></i> Aprobada</span>`;
-        } else {
-            estadoBadge.innerHTML = `<span class="badge bg-danger"><i class="fa-solid fa-circle-xmark me-1"></i> Rechazada</span>`;
-        }
-
-        const detalleAcciones = document.getElementById('detalleAcciones');
-        if (solicitudSeleccionada.estado === 'pendiente') {
-            detalleAcciones.style.display = 'flex';
-        } else {
-            detalleAcciones.style.display = 'none';
-        }
-
-        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
-        bsModal.show();
-    });
-
-    const btnAprobar = document.getElementById('btnAprobarSolicitud');
-    if (btnAprobar) {
-        btnAprobar.addEventListener('click', () => {
-            if (!solicitudSeleccionada) return;
-
-            solicitudSeleccionada.estado = 'aprobado';
-
-            if (solicitudSeleccionada.empleado === AppState.usuario.nombre) {
-                AppState.usuario.saldoDisponible = Math.max(0, AppState.usuario.saldoDisponible - solicitudSeleccionada.dias);
+            const idFirestore = btn.getAttribute('data-id');
+            const sol = AppState.solicitudes.find(s => s.idFirestore === idFirestore);
+            if (sol) {
+                mostrarDetalleSolicitud(sol);
             }
-
-            AppState.notificaciones.unshift({
-                id: Date.now(),
-                texto: `Solicitud de ${solicitudSeleccionada.empleado} fue APROBADA (${solicitudSeleccionada.dias} días).`,
-                fecha: "Justo ahora",
-                leida: false
-            });
-
-            guardarEstado();
-
-            renderRequestsTable();
-            updateKPIs();
-            notificaciones();
-
-            const bsModal = bootstrap.Modal.getInstance(modalEl);
-            if (bsModal) bsModal.hide();
-
-            alert(`Solicitud de ${solicitudSeleccionada.empleado} ha sido Aprobada.`);
         });
     }
 
-    const btnRechazar = document.getElementById('btnRechazarSolicitud');
-    if (btnRechazar) {
-        btnRechazar.addEventListener('click', () => {
+    const btnAprobar = document.getElementById('btnAprobarSolicitud');
+    const btnCancelar = document.getElementById('btnCancelarSolicitud');
+
+    if (btnAprobar) {
+        btnAprobar.addEventListener('click', async () => {
             if (!solicitudSeleccionada) return;
 
-            solicitudSeleccionada.estado = 'rechazado';
+            const esOperador = verificarRolOperador();
+            if (!esOperador) {
+                Swal.fire('Error', 'Únicamente los usuarios con el rol Operador pueden aprobar solicitudes.', 'error');
+                return;
+            }
 
-            AppState.notificaciones.unshift({
-                id: Date.now(),
-                texto: `Solicitud de ${solicitudSeleccionada.empleado} fue RECHAZADA.`,
-                fecha: "Justo ahora",
-                leida: false
-            });
+            try {
+                const solRef = doc(db, "solicitudes", solicitudSeleccionada.idFirestore);
+                await updateDoc(solRef, { estado: "aprobado" });
 
-            guardarEstado();
+                const userRef = doc(db, "usuarios", solicitudSeleccionada.uid_empleado);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const actualSaldo = userSnap.data().saldoDisponible ?? 0;
+                    const nuevoSaldo = Math.max(0, actualSaldo - solicitudSeleccionada.dias);
+                    await updateDoc(userRef, { saldoDisponible: nuevoSaldo });
+                    if (solicitudSeleccionada.uid_empleado === AppState.usuario.uid) {
+                        AppState.usuario.saldoDisponible = nuevoSaldo;
+                    }
+                }
 
-            renderRequestsTable();
-            updateKPIs();
-            notificaciones();
+                const bsModal = bootstrap.Modal.getInstance(modalEl);
+                if (bsModal) bsModal.hide();
+                Swal.fire('Aprobada', `Solicitud de ${solicitudSeleccionada.empleado} ha sido Aprobada.`, 'success');
+            } catch (error) {
+                console.error("Error al aprobar solicitud en Firestore:", error);
+                Swal.fire('Error', 'Hubo un error al aprobar la solicitud.', 'error');
+            }
+        });
+    }
 
-            const bsModal = bootstrap.Modal.getInstance(modalEl);
-            if (bsModal) bsModal.hide();
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', async () => {
+            if (!solicitudSeleccionada) return;
 
-            alert(`Solicitud de ${solicitudSeleccionada.empleado} ha sido Rechazada.`);
+            try {
+                const solRef = doc(db, "solicitudes", solicitudSeleccionada.idFirestore);
+                await updateDoc(solRef, { estado: "rechazado" });
+
+                const bsModal = bootstrap.Modal.getInstance(modalEl);
+                if (bsModal) bsModal.hide();
+                Swal.fire('Cancelada', `Solicitud de ${solicitudSeleccionada.empleado} ha sido Cancelada.`, 'success');
+            } catch (error) {
+                console.error("Error al cancelar solicitud en Firestore:", error);
+                Swal.fire('Error', 'Hubo un error al cancelar la solicitud.', 'error');
+            }
         });
     }
 }
 
-function notificaciones() {
-    const notiUI = document.getElementById('notiUI');
-    if (!notiUI) return;
+function renderProximasAusencias() {
+    const container = document.querySelector('.absence-list');
+    if (!container) return;
 
-    if (AppState.notificaciones.length === 0) {
-        notiUI.innerHTML = `<li class="p-2 text-center text-muted small">No hay notificaciones pendientes</li>`;
+    const hoyStr = new Date().toISOString().split('T')[0];
+    const ausencias = AppState.solicitudes
+        .filter(s => s.estado === 'aprobado' && s.fechaFin >= hoyStr)
+        .sort((a, b) => new Date(a.fechaInicio) - new Date(b.fechaInicio))
+        .slice(0, 4);
+
+    if (ausencias.length === 0) {
+        container.innerHTML = `<div class="text-center text-muted small py-3">No hay ausencias programadas próximamente</div>`;
         return;
     }
 
     let html = '';
-    AppState.notificaciones.forEach(n => {
+    ausencias.forEach(a => {
+        const enCurso = a.fechaInicio <= hoyStr && a.fechaFin >= hoyStr;
+        const badgeText = enCurso ?
+            `<small class="d-block text-success fw-bold" style="font-size: 0.7rem;"><i class="fa-solid fa-plane-departure me-1"></i>En Curso</small>` :
+            `<small class="d-block text-muted" style="font-size: 0.7rem;"><i class="fa-solid fa-calendar me-1"></i>Próximamente</small>`;
+
         html += `
-            <li>
-                <a href="#" class="dropdown-item dropdown-item-custom d-flex justify-content-between align-items-center py-2 border-bottom">
+            <div class="absence-item">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem; background: ${a.avatarBg || '#0284c7'};">${a.iniciales}</div>
                     <div>
-                        <span class="d-block small text-dark font-semibold">${n.texto}</span>
-                        <small class="text-muted" style="font-size: 0.7rem;">${n.fecha}</small>
+                        <strong class="d-block text-dark lh-1" style="font-size: 0.875rem;">${a.empleado}</strong>
+                        <small class="text-muted" style="font-size: 0.75rem;">${a.cargo}</small>
                     </div>
-                    ${!n.leida ? '<span class="badge bg-danger rounded-circle p-1 ms-2" style="width: 8px; height: 8px; display: inline-block;"></span>' : ''}
-                </a>
-            </li>
-        `;
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-light text-dark border fw-semibold mb-1 d-inline-block">${a.fechasTexto.split(' 20')[0]}</span>
+                    ${badgeText}
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+}
+
+export function renderProximoFeriado() {
+    const cardFeriado = document.querySelector('.dashboard-card .p-3.rounded-3');
+    if (!cardFeriado) return;
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const proximo = FERIADOS_OFICIALES_MX.find(f => f >= hoy);
+
+    if (proximo) {
+        const fechaObj = new Date(proximo + 'T00:00:00');
+        const dia = fechaObj.getDate();
+        const meses = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+        const mes = meses[fechaObj.getMonth()];
+        const nombre = nombresFeriados[proximo] || 'Día Inhábil Oficial';
+
+        cardFeriado.innerHTML = `
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-3 bg-white text-danger rounded-3 shadow-sm text-center" style="min-width: 55px;">
+                    <strong class="d-block fs-4 lh-1">${dia}</strong>
+                    <small class="fw-bold text-uppercase" style="font-size: 0.65rem;">${mes}</small>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-dark mb-1">${nombre}</h6>
+                    <p class="text-muted small mb-0">Día de descanso obligatorio (LFT México) (${fechaObj.getFullYear()}.)</p>
+                </div>
+            </div>`;
+    }
+}
+
+function initTableFilters() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => {
+                b.classList.remove('active');
+                b.classList.add('btn-light');
+            });
+
+            btn.classList.remove('btn-light');
+            btn.classList.add('active');
+            renderRequestsTable(btn.getAttribute('data-filter'));
+        });
+    });
+}
+
+export function notificaciones() {
+    const notiUI = document.getElementById('notiUI');
+    const badgeNotiUI = document.getElementById('badgeNotiUI');
+
+    // Generar notificaciones únicamente cuando un usuario realice una solicitud de vacaciones
+    if (!AppState.solicitudes || AppState.solicitudes.length === 0) {
+        AppState.notificaciones = [];
+        if (badgeNotiUI) badgeNotiUI.classList.add('d-none');
+        if (notiUI) {
+            notiUI.innerHTML = `
+                <li class="p-3 text-center text-muted small">
+                    <i class="fa-solid fa-bell-slash d-block fs-5 mb-2 opacity-50"></i>
+                    No hay notificaciones de solicitudes
+                </li>`;
+        }
+        return;
+    }
+
+    // Ordenar solicitudes por fecha de creación (más recientes primero)
+    const solicitudesOrdenadas = [...AppState.solicitudes].sort((a, b) => {
+        const fechaA = a.creadoEn ? new Date(a.creadoEn) : 0;
+        const fechaB = b.creadoEn ? new Date(b.creadoEn) : 0;
+        return fechaB - fechaA;
     });
 
-    notiUI.innerHTML = html;
+    AppState.notificaciones = solicitudesOrdenadas.map(req => {
+        const esPropia = AppState.usuario && req.uid_empleado === AppState.usuario.uid;
+        const texto = esPropia
+            ? `Enviaste una solicitud de ${req.dias} día(s) de ${req.tipo || 'vacaciones'}`
+            : `${req.empleado || 'Un colaborador'} solicitó ${req.dias} día(s) de ${req.tipo || 'vacaciones'}`;
+
+        let fechaTexto = 'Reciente';
+        if (req.creadoEn) {
+            try {
+                const f = new Date(req.creadoEn);
+                fechaTexto = f.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) + ' ' + f.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                fechaTexto = req.fechasTexto || 'Reciente';
+            }
+        }
+
+        let badgeClass = 'badge-pendiente';
+        if (req.estado === 'aprobado') badgeClass = 'bg-success-subtle text-success';
+        if (req.estado === 'rechazado') badgeClass = 'bg-danger-subtle text-danger';
+
+        return {
+            id: req.idFirestore,
+            texto: texto,
+            fecha: fechaTexto,
+            estado: req.estado || 'pendiente',
+            badgeClass: badgeClass,
+            empleado: req.empleado
+        };
+    });
+
+    if (badgeNotiUI) {
+        if (AppState.notificaciones.length > 0) {
+            badgeNotiUI.classList.remove('d-none');
+        } else {
+            badgeNotiUI.classList.add('d-none');
+        }
+    }
+
+    if (notiUI) {
+        let html = `
+            <li class="dropdown-header px-3 py-2 border-bottom d-flex justify-content-between align-items-center bg-light">
+                <span class="fw-bold text-dark" style="font-size: 0.8rem;">Solicitudes de Vacaciones</span>
+                <span class="badge bg-danger rounded-pill">${AppState.notificaciones.length}</span>
+            </li>
+        `;
+
+        AppState.notificaciones.forEach(n => {
+            html += `
+                <li>
+                    <a href="#" 
+                       class="dropdown-item dropdown-item-custom d-flex justify-content-between align-items-center py-2 px-3 border-bottom text-wrap"
+                       onclick="abrirDetalleDesdeNotificacion('${n.id}')">
+                        <div class="pe-2" style="max-width: 220px;">
+                            <span class="d-block small text-dark fw-semibold mb-1" style="line-height: 1.25;">${n.texto}</span>
+                            <small class="text-muted d-block" style="font-size: 0.7rem;"><i class="fa-regular fa-clock me-1"></i>${n.fecha}</small>
+                        </div>
+                        <span class="badge ${n.badgeClass} rounded-pill text-capitalize" style="font-size: 0.65rem;">${n.estado}</span>
+                    </a>
+                </li>`;
+        });
+
+        notiUI.innerHTML = html;
+    }
 }
+
+window.abrirDetalleDesdeNotificacion = function (idFirestore) {
+    const solicitud = AppState.solicitudes.find(s => s.idFirestore === idFirestore);
+    if (!solicitud) return;
+    mostrarDetalleSolicitud(solicitud);
+};
 
 function initBuscadorEmpleado() {
     const input = document.getElementById('inputBuscarEmpleado');
@@ -662,3 +843,161 @@ function initBuscadorEmpleado() {
         });
     });
 }
+
+export function cargarInfoUsuarios() {
+    if (!AppState.usuario) return;
+
+    if (document.getElementById('userNameUI')) document.getElementById('userNameUI').textContent = AppState.usuario.nombre || 'Usuario';
+    if (document.getElementById('userRoleUI')) document.getElementById('userRoleUI').textContent = AppState.usuario.cargo || 'Colaborador';
+    if (document.getElementById('userNameTitle')) document.getElementById('userNameTitle').textContent = AppState.usuario.nombre ? AppState.usuario.nombre.split(' ')[0] : 'Usuario';
+    if (document.getElementById('userIniciales')) document.getElementById('userIniciales').textContent = AppState.usuario.iniciales || 'US';
+
+    if (document.getElementById('userNameCalendar')) document.getElementById('userNameCalendar').textContent = AppState.usuario.nombre || 'Usuario';
+    if (document.getElementById('userRoleCalendar')) document.getElementById('userRoleCalendar').textContent = AppState.usuario.cargo || 'Colaborador';
+    if (document.getElementById('userInicialesCalendar')) document.getElementById('userInicialesCalendar').textContent = AppState.usuario.iniciales || 'US';
+
+    // Rellenar información de días en el panel izquierdo del calendario
+    const total = AppState.usuario.saldoTotal || 0;
+    const pendientes = AppState.usuario.saldoDisponible ?? total;
+    const tomados = Math.max(0, total - pendientes);
+
+    if (document.getElementById('calDiasTotal')) document.getElementById('calDiasTotal').textContent = total;
+    if (document.getElementById('calDiasTomados')) document.getElementById('calDiasTomados').textContent = tomados;
+    if (document.getElementById('calDiasPendientes')) document.getElementById('calDiasPendientes').textContent = pendientes;
+
+    // Rellenar la lista de fechas tomadas/solicitadas
+    const listaFechas = document.getElementById('calFechasList');
+    if (listaFechas) {
+        listaFechas.innerHTML = '';
+        const misVacaciones = (AppState.solicitudes || []).filter(req => {
+            const esMismaPersona = (req.uid_empleado && AppState.usuario.uid && req.uid_empleado === AppState.usuario.uid) ||
+                (req.empleado && AppState.usuario.nombre && req.empleado.trim().toLowerCase() === AppState.usuario.nombre.trim().toLowerCase());
+            return esMismaPersona;
+        });
+
+        if (misVacaciones.length === 0) {
+            listaFechas.innerHTML = `<li class="text-muted small fst-italic py-2">No hay fechas registradas.</li>`;
+        } else {
+            misVacaciones.forEach(req => {
+                const li = document.createElement('li');
+                let badgeEstado = '<span class="badge badge-pendiente ms-1" style="font-size: 0.6rem;">Pendiente</span>';
+                if (req.estado === 'aprobado') {
+                    badgeEstado = '<span class="badge bg-success-subtle text-success ms-1" style="font-size: 0.6rem;">Aprobado</span>';
+                } else if (req.estado === 'rechazado') {
+                    badgeEstado = '<span class="badge bg-danger-subtle text-danger ms-1" style="font-size: 0.6rem;">Rechazado</span>';
+                }
+
+                li.className = 'p-2 mb-2 bg-light rounded border-start border-danger border-3 shadow-sm';
+                li.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong class="text-dark lh-1" style="font-size: 0.75rem;">${req.fechasTexto || `${req.fechaInicio} - ${req.fechaFin}`}</strong>
+                        ${badgeEstado}
+                    </div>
+                    <small class="text-muted d-block" style="font-size: 0.68rem;">${req.dias} día(s) • ${req.tipo || 'Vacaciones'}</small>
+                `;
+                listaFechas.appendChild(li);
+            });
+        }
+    }
+}
+
+export function initModalPerfil() {
+    const modalEl = document.getElementById('modalPerfilUsuario');
+    if (modalEl) {
+        modalEl.addEventListener('show.bs.modal', () => {
+            mostrarPerfilUsuario();
+        });
+    }
+}
+
+export function mostrarPerfilUsuario() {
+    if (!AppState.usuario) return;
+    const modalEl = document.getElementById('modalPerfilUsuario');
+    if (!modalEl) return;
+
+    const u = AppState.usuario;
+
+    const avatar = document.getElementById('perfilAvatar');
+    if (avatar) {
+        avatar.textContent = u.iniciales || getIniciales(u.nombre);
+        avatar.style.background = u.avatar || 'var(--primary-gradient)';
+    }
+
+    if (document.getElementById('perfilNombre')) document.getElementById('perfilNombre').textContent = u.nombre || 'Usuario';
+    if (document.getElementById('perfilCargo')) document.getElementById('perfilCargo').textContent = `${u.cargo || 'Colaborador'} | ${u.area || u.depto || 'General'}`;
+
+    const rolBadge = document.getElementById('perfilRolBadge');
+    if (rolBadge) {
+        const esOp = (u.rol || '').toLowerCase().trim() === 'operador';
+        rolBadge.className = esOp ? 'badge badge-rechazado' : 'badge bg-light text-secondary';
+        rolBadge.textContent = u.rol || 'Empleado';
+    }
+
+    if (document.getElementById('perfilArea')) {
+        document.getElementById('perfilArea').innerHTML = `<i class="fa-solid fa-building text-danger"></i>${u.area || u.depto || 'General'}`;
+    }
+    if (document.getElementById('perfilPuesto')) {
+        document.getElementById('perfilPuesto').innerHTML = `<i class="fa-solid fa-briefcase text-danger"></i>${u.cargo || 'Colaborador'}`;
+    }
+    if (document.getElementById('perfilRolTexto')) {
+        document.getElementById('perfilRolTexto').innerHTML = `<i class="fa-solid fa-user-shield text-danger"></i>${u.rol || 'Empleado'}`;
+    }
+    if (document.getElementById('perfilUid')) {
+        document.getElementById('perfilUid').textContent = u.uid || '-';
+    }
+
+    let fechaTexto = 'No registrada';
+    let antiguedadTexto = 'Sin registrar';
+
+    if (u.fechaIngreso && u.fechaIngreso !== 'No registrada') {
+        try {
+            const f = new Date(u.fechaIngreso + 'T00:00:00');
+            fechaTexto = f.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+
+            const hoy = new Date();
+            let anios = hoy.getFullYear() - f.getFullYear();
+            let m = hoy.getMonth() - f.getMonth();
+            if (m < 0 || (m === 0 && hoy.getDate() < f.getDate())) {
+                anios--;
+                m += 12;
+            }
+            anios = Math.max(0, anios);
+            if (anios === 0 && m === 0) {
+                antiguedadTexto = 'Menos de 1 mes';
+            } else {
+                antiguedadTexto = `${anios} año(s)${m > 0 ? ` y ${m} mes(es)` : ''}`;
+            }
+        } catch (error) {
+            fechaTexto = u.fechaIngreso;
+        }
+    }
+
+    if (document.getElementById('perfilFechaIngreso')) {
+        document.getElementById('perfilFechaIngreso').innerHTML = `<i class="fa-solid fa-calendar text-danger"></i>${fechaTexto}`;
+    }
+    if (document.getElementById('perfilAntiguedad')) {
+        document.getElementById('perfilAntiguedad').innerHTML = `<i class="fa-solid fa-clock-rotate text-danger"></i>${antiguedadTexto}`;
+    }
+
+    const total = u.saldoTotal;
+    const disponible = u.saldoDisponible ?? total;
+    const tomados = Math.max(0, total - disponible);
+    const pct = total > 0 ? Math.round((disponible / total) * 100) : 0;
+
+    if (document.getElementById('perfilSaldoTotal')) document.getElementById('perfilSaldoTotal').textContent = `${total} dias`;
+    if (document.getElementById('perfilSaldoDisponible')) document.getElementById('perfilSaldoDisponible').textContent = `${disponible} dias`;
+    if (document.getElementById('perfilSaldoTomados')) document.getElementById('perfilSaldoTomados').textContent = `${tomados} dias`;
+    if (document.getElementById('perfilPctTexto')) document.getElementById('perfilPctTexto').textContent = `${pct}% disponible`;
+
+    const bar = document.getElementById('perfilProgressBar');
+    if (bar) {
+        bar.style.width = `${pct}%`;
+        bar.setAttribute('aria-valuenow', pct);
+    }
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    bsModal.show();
+
+}
+
+window.mostrarPerfilUsuario = mostrarPerfilUsuario;

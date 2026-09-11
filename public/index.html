@@ -14,9 +14,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-  <link rel="stylesheet" href="/css/style.css?v=0.00557">
+  <link rel="stylesheet" href="/css/style.css?v=0.00560">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
@@ -33,19 +34,17 @@
 
       <div class="sidebar-title">Menú Principal</div>
       <nav class="nav flex-column">
-        <a class="nav-link-custom active" href="/index.html"><i
-            class="fa-solid fa-chart-line"></i><span>Inicio</span></a>
-        <a class="nav-link-custom" href="/solicitudes.html"><i class="fa-solid fa-file-signature"></i><span>Mis
+        <a class="nav-link-custom active" href="/"><i class="fa-solid fa-house-chimney"></i><span>Inicio</span></a>
+        <a class="nav-link-custom" href="/solicitudes"><i class="fa-solid fa-clipboard"></i><span>Mis
             Solicitudes</span></a>
-        <a class="nav-link-custom" href="/calendario.html"><i
-            class="fa-solid fa-calendar-days"></i><span>Calendario</span></a>
-        <a class="nav-link-custom" href="/empleados.html"><i class="fa-solid fa-users"></i><span>Empleados</span></a>
+        <a class="nav-link-custom" href="/calendario"><i class="fa-solid fa-calendar"></i><span>Calendario</span></a>
+        <a class="nav-link-custom" href="/empleados"><i class="fa-solid fa-user-group"></i><span>Empleados</span></a>
       </nav>
 
       <div class="sidebar-title">Administración</div>
       <nav class="nav flex-column">
-        <a class="nav-link-custom" href="#"><i class="fa-solid fa-building"></i><span>Departamentos</span></a>
-        <a class="nav-link-custom" href="#"><i class="fa-solid fa-gears"></i><span>Configuración</span></a>
+        <a class="nav-link-custom" href="/configuracion"><i
+            class="fa-solid fa-user-gear"></i><span>Configuración</span></a>
       </nav>
     </div>
 
@@ -67,55 +66,39 @@
 
   <header class="top-header">
     <div class="d-flex align-items-center gap-3">
-      <div>
-        <div class="search-box">
-          <i class="fa-solid fa-search"></i>
-          <input type="text" id="inputBuscarEmpleado" class="border-0 search-input" placeholder="Buscar...">
-          <i class="fa-solid fa-xmark"></i>
-        </div>
-      </div>
-      <!-- <button class="btn btn-light d-lg-none p-2 border-0" id="btnToggleSidebar">
+      <button class="btn btn-light d-lg-none p-2 border-0" id="btnToggleSidebar">
         <i class="fa-solid fa-bars fs-5"></i>
       </button>
-       <div class="header-title-section">
+      <div class="header-title-section">
         <h1>Panel de Control</h1>
         <p>Bienvenido al Sistema de Gestión de Ausencias y Vacaciones</p>
-      </div> -->
+      </div>
     </div>
 
     <div class="d-flex align-items-center gap-3">
       <div class="dropdown">
         <div class="action-icon-btn" style="cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="fa-solid fa-bell"></i>
-          <span class="badge-dot"></span>
+          <span class="badge-dot d-none" id="badgeNotiUI"></span>
         </div>
-        <ul class="dropdown-menu dropdown-menu-center dropdown-menu-custom border-0 shadow">
-          <li id="notiUI"><a href="#" class="dropdown-item dropdown-item-custom">
-              No hay notificaciones pendientes</a></li>
-        </ul>
-      </div>
-      <div class="dropdown">
-        <div class="action-icon-btn" style="cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="fa-solid fa-envelope"></i>
-          <span class="badge-dot"></span>
-        </div>
-        <ul class="dropdown-menu dropdown-menu-center dropdown-menu-custom border-0 shadow">
-          <li><a href="#" class="dropdown-item dropdown-item-custom">No hay mensajes pendientes</a></li>
+        <ul class="dropdown-menu dropdown-menu-center dropdown-menu-custom border-0 shadow" id="notiUI"
+          style="min-width: 300px; max-height: 380px; overflow-y: auto;">
+          <li class="p-3 text-center text-muted small">No hay notificaciones pendientes</li>
         </ul>
       </div>
 
       <div class="dropdown">
         <div class="user-profile-pill" data-bs-toggle="dropdown" aria-expanded="false">
-          <div class="avatar-circle">JP</div>
+          <div id="userIniciales" class="avatar-circle">..</div>
           <div class="d-none d-md-flex flex-column text-start">
-            <span id="userNameUI" class="fw-bold text-dark lh-1" style="font-size: 0.85rem;">Juan Pérez</span>
-            <small id="userRoleUI" class="text-muted lh-1 mt-1" style="font-size: 0.725rem;">Gerente de
-              Operaciones</small>
+            <span id="userNameUI" class="fw-bold text-dark lh-1" style="font-size: 0.85rem;">Cargando...</span>
+            <small id="userRoleUI" class="text-muted lh-1 mt-1" style="font-size: 0.725rem;">Cargando...</small>
           </div>
           <i class="fa-solid fa-chevron-down ms-1 text-muted" style="font-size: 0.75rem;"></i>
         </div>
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom border-0 shadow">
-          <li><a class="dropdown-item dropdown-item-custom" href="#"><i class="fa-solid fa-user me-2 text-danger"></i>
+          <li><a class="dropdown-item dropdown-item-custom" href="#" data-bs-toggle="modal"
+              data-bs-target="#modalPerfilUsuario"><i class="fa-solid fa-user me-2 text-danger"></i>
               Mi Perfil</a></li>
           <li><a class="dropdown-item dropdown-item-custom" href="#"><i class="fa-solid fa-sliders me-2 text-muted"></i>
               Preferencias</a></li>
@@ -150,7 +133,8 @@
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="kpi-label">Mis Días Disponibles</div>
-                <div id="kpiDiasDisponibles" class="kpi-value">15 <span class="fs-6 text-muted font-normal">días</span>
+                <div id="kpiDiasDisponibles" class="kpi-value">
+                  <span class="spinner-border spinner-border text-secondary"></span>
                 </div>
               </div>
               <div class="kpi-icon-wrapper kpi-icon-danger">
@@ -167,7 +151,8 @@
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="kpi-label">Solicitudes Pendientes</div>
-                <div id="kpiPendientes" class="kpi-value">2</div>
+                <div id="kpiPendientes" class="kpi-value"><span
+                    class="spinner-border spinner-border text-secondary"></span></div>
               </div>
               <div class="kpi-icon-wrapper kpi-icon-warning">
                 <i class="fa-solid fa-clock-rotate-left"></i>
@@ -183,7 +168,8 @@
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="kpi-label">En Vacaciones Hoy</div>
-                <div id="kpiEnVacaciones" class="kpi-value">2 <span class="fs-6 text-muted font-normal">personas</span>
+                <div id="kpiEnVacaciones" class="kpi-value"><span
+                    class="spinner-border spinner-border text-secondary"></span>
                 </div>
               </div>
               <div class="kpi-icon-wrapper kpi-icon-info">
@@ -199,7 +185,8 @@
             <div class="d-flex justify-content-between align-items-start">
               <div>
                 <div class="kpi-label">Aprobadas este Año</div>
-                <div id="kpiAprobadas" class="kpi-value">2</div>
+                <div id="kpiAprobadas" class="kpi-value"><span
+                    class="spinner-border spinner-border text-secondary"></span></div>
               </div>
               <div class="kpi-icon-wrapper kpi-icon-success">
                 <i class="fa-solid fa-calendar-check"></i>
@@ -213,21 +200,6 @@
 
       <div class="row g-4">
         <div class="col-lg-8">
-
-          <div class="dashboard-card border-danger border-opacity-25 mb-4">
-            <div class="dashboard-card-header">
-              <h3 class="dashboard-card-title">
-                <i class="fa-solid fa-chart-column text-danger me-2"></i> Uso de Vacaciones por Mes (2026)
-              </h3>
-              <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-outline-secondary active">Mensual</button>
-                <button type="button" class="btn btn-outline-secondary">Por Depto</button>
-              </div>
-            </div>
-            <div style="position: relative; height: 260px; width: 100%;">
-              <canvas id="vacationChart"></canvas>
-            </div>
-          </div>
 
           <div class="dashboard-card">
             <div class="dashboard-card-header">
@@ -253,88 +225,10 @@
                   </tr>
                 </thead>
                 <tbody id="requestsTableBody">
-                  <tr data-status="pendiente">
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="avatar-circle"
-                          style="width: 32px; height: 32px; font-size: 0.8rem; background: linear-gradient(135deg, #f59e0b, #d97706);">
-                          CR</div>
-                        <div>
-                          <strong class="d-block text-dark lh-1">Carlos Rodríguez</strong>
-                          <small class="text-muted" style="font-size: 0.75rem;">Soporte Técnico</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td><strong>18 Ago - 25 Ago</strong> <small class="text-muted d-block">2026</small></td>
-                    <td><span class="fw-bold">6</span> días</td>
-                    <td><span class="badge-status badge-pendiente"><i class="fa-solid fa-clock"></i> Pendiente</span>
-                    </td>
-                    <td class="text-end">
-                      <button class="btn btn-sm btn-proseinet-light py-1 px-2" title="Revisar Solicitud"><i
-                          class="fa-solid fa-eye"></i></button>
-                    </td>
-                  </tr>
-                  <tr data-status="aprobado">
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="avatar-circle"
-                          style="width: 32px; height: 32px; font-size: 0.8rem; background: linear-gradient(135deg, #10b981, #059669);">
-                          ML</div>
-                        <div>
-                          <strong class="d-block text-dark lh-1">Maria López</strong>
-                          <small class="text-muted" style="font-size: 0.75rem;">Recursos Humanos</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td><strong>01 Sep - 10 Sep</strong> <small class="text-muted d-block">2026</small></td>
-                    <td><span class="fw-bold">8</span> días</td>
-                    <td><span class="badge-status badge-aprobado"><i class="fa-solid fa-circle-check"></i>
-                        Aprobada</span></td>
-                    <td class="text-end">
-                      <button class="btn btn-sm btn-light py-1 px-2 text-muted" title="Ver Detalle"><i
-                          class="fa-solid fa-ellipsis-vertical"></i></button>
-                    </td>
-                  </tr>
-                  <tr data-status="aprobado">
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="avatar-circle"
-                          style="width: 32px; height: 32px; font-size: 0.8rem; background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
-                          AH</div>
-                        <div>
-                          <strong class="d-block text-dark lh-1">Alejandro Hernández</strong>
-                          <small class="text-muted" style="font-size: 0.75rem;">Desarrollo</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td><strong>12 Oct - 16 Oct</strong> <small class="text-muted d-block">2026</small></td>
-                    <td><span class="fw-bold">5</span> días</td>
-                    <td><span class="badge-status badge-aprobado"><i class="fa-solid fa-circle-check"></i>
-                        Aprobada</span></td>
-                    <td class="text-end">
-                      <button class="btn btn-sm btn-light py-1 px-2 text-muted" title="Ver Detalle"><i
-                          class="fa-solid fa-ellipsis-vertical"></i></button>
-                    </td>
-                  </tr>
-                  <tr data-status="pendiente">
-                    <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <div class="avatar-circle"
-                          style="width: 32px; height: 32px; font-size: 0.8rem; background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
-                          SF</div>
-                        <div>
-                          <strong class="d-block text-dark lh-1">Sofia Fuentes</strong>
-                          <small class="text-muted" style="font-size: 0.75rem;">Ventas</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td><strong>02 Nov - 06 Nov</strong> <small class="text-muted d-block">2026</small></td>
-                    <td><span class="fw-bold">5</span> días</td>
-                    <td><span class="badge-status badge-pendiente"><i class="fa-solid fa-clock"></i> Pendiente</span>
-                    </td>
-                    <td class="text-end">
-                      <button class="btn btn-sm btn-proseinet-light py-1 px-2" title="Revisar Solicitud"><i
-                          class="fa-solid fa-eye"></i></button>
+                  <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">
+                      <span class="spinner-border text-secondary fw-bold"></span>
+
                     </td>
                   </tr>
                 </tbody>
@@ -355,50 +249,8 @@
             </div>
 
             <div class="absence-list">
-              <div class="absence-item">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="avatar-circle"
-                    style="width: 36px; height: 36px; font-size: 0.85rem; background: #dc2626;">LG</div>
-                  <div>
-                    <strong class="d-block text-dark lh-1" style="font-size: 0.875rem;">Luis Gómez</strong>
-                    <small class="text-muted" style="font-size: 0.75rem;">Infraestructura</small>
-                  </div>
-                </div>
-                <div class="text-end">
-                  <span class="badge bg-light text-dark border fw-semibold mb-1 d-inline-block">12 Ago - 16 Ago</span>
-                  <small class="d-block text-success fw-bold" style="font-size: 0.7rem;"><i
-                      class="fa-solid fa-plane-departure me-1"></i>En curso</small>
-                </div>
-              </div>
-
-              <div class="absence-item">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="avatar-circle"
-                    style="width: 36px; height: 36px; font-size: 0.85rem; background: #0284c7;">AM</div>
-                  <div>
-                    <strong class="d-block text-dark lh-1" style="font-size: 0.875rem;">Ana Martínez</strong>
-                    <small class="text-muted" style="font-size: 0.75rem;">Finanzas</small>
-                  </div>
-                </div>
-                <div class="text-end">
-                  <span class="badge bg-light text-dark border fw-semibold mb-1 d-inline-block">18 Ago - 22 Ago</span>
-                  <small class="d-block text-muted" style="font-size: 0.7rem;">En 6 días</small>
-                </div>
-              </div>
-
-              <div class="absence-item">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="avatar-circle"
-                    style="width: 36px; height: 36px; font-size: 0.85rem; background: #059669;">DT</div>
-                  <div>
-                    <strong class="d-block text-dark lh-1" style="font-size: 0.875rem;">Daniel Torres</strong>
-                    <small class="text-muted" style="font-size: 0.75rem;">Marketing</small>
-                  </div>
-                </div>
-                <div class="text-end">
-                  <span class="badge bg-light text-dark border fw-semibold mb-1 d-inline-block">01 Sep - 05 Sep</span>
-                  <small class="d-block text-muted" style="font-size: 0.7rem;">Próximo mes</small>
-                </div>
+              <div class="text-center text-muted small py-3">
+                <div class="spinner-border text-secondary fw-bold"></div>
               </div>
             </div>
           </div>
@@ -413,13 +265,14 @@
             <div class="p-3 rounded-3"
               style="background-color: var(--primary-light); border: 1px dashed rgba(220,38,38,0.3);">
               <div class="d-flex align-items-center gap-3">
-                <div class="p-3 bg-white text-danger rounded-3 shadow-sm text-center" style="min-width: 55px;">
-                  <strong class="d-block fs-4 lh-1">16</strong>
-                  <small class="fw-bold text-uppercase" style="font-size: 0.65rem;">SEP</small>
+                <div class="p-3 bg-danger-light text-danger rounded-3 text-center" style="min-width: 55px;">
+                  <strong class="text-white d-block fs-4 lh-1">16</strong>
+                  <small class="text-white fw-bold text-uppercase" style="font-size: 0.65rem;">SEP</small>
                 </div>
                 <div>
-                  <h6 class="fw-bold text-dark mb-1">Día de la Independencia</h6>
-                  <p class="text-muted small mb-0">Día de descanso obligatorio según el calendario laboral corporativo.
+                  <h6 class="d-none fw-bold text-dark mb-1">Día de la Independencia</h6>
+                  <p class="d-none text-muted small mb-0">Día de descanso obligatorio según el calendario laboral
+                    corporativo.
                   </p>
                 </div>
               </div>
@@ -542,11 +395,11 @@
             </div>
           </div>
           <div class="d-flex justify-content-end gap-2 pt-2" id="detalleAcciones">
-            <button type="button" class="btn btn-outline-danger fw-semibold" id="btnRechazarSolicitud">
-              <i class="fa-solid fa-xmark me-1"></i> Rechazar
-            </button>
             <button type="button" class="btn btn-success fw-semibold" id="btnAprobarSolicitud">
               <i class="fa-solid fa-check me-1"></i> Aprobar Solicitud
+            </button>
+            <button type="button" class="btn btn-danger fw-semibold" id="btnCancelarSolicitud">
+              Cancelar Solicitud
             </button>
           </div>
         </div>
@@ -554,9 +407,120 @@
     </div>
   </div>
 
+  <div class="modal fade" id="modalPerfilUsuario" tabindex="-1" aria-labelledby="modalPerfilUsuarioLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+
+        <div class="modal-header border-0 pb-0 pt-4 px-4">
+          <div class="d-flex align-items-center gap-3">
+            <div id="perfilAvatar" class="avatar-circle"
+              style="width: 50px; height: 50px; font-size: 1.15rem; background: var(--primary-gradient);">US</div>
+            <div>
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="modal-title fw-bold text-dark mb-0" id="perfilNombre">Cargando...</h5>
+                <span id="perfilRolBadge" class="badge bg-light text-muted border">Empleado</span>
+              </div>
+              <small class="text-muted" id="perfilCargo">Cargo / Departamento</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <div class="p-3 mb-3 bg-light rounded-4 border">
+            <h6 class="fw-bold text-dark mb-3" style="font-size: 0.85rem;">
+              <i class="fa-solid fa-id-card text-danger me-2"></i>Información Corporativa
+            </h6>
+            <div class="row g-3">
+              <div class="col-6 col-md-4">
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Departamento / Área</small>
+                <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilArea">
+                  <i class="fa-solid fa-building text-danger"></i> -
+                </span>
+              </div>
+              <div class="col-6 col-md-4">
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Cargo / Puesto</small>
+                <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilPuesto">
+                  <i class="fa-solid fa-briefcase text-danger"></i> -
+                </span>
+              </div>
+              <div class="col-6 col-md-4">
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Fecha de Ingreso</small>
+                <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilFechaIngreso">
+                  <i class="fa-solid fa-calendar-day text-danger"></i> -
+                </span>
+              </div>
+              <div class="col-6 col-md-4">
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Antigüedad Laboral</small>
+                <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilAntiguedad">
+                  <i class="fa-solid fa-clock-rotate-left text-danger"></i> -
+                </span>
+              </div>
+              <div class="col-6 col-md-4">
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Rol en el Sistema</small>
+                <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilRolTexto">
+                  <i class="fa-solid fa-user-shield text-danger"></i> -
+                </span>
+              </div>
+              <div class="col-6 col-md-4">
+                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">ID de Usuario (UID)</small>
+                <span class="text-muted text-truncate d-block mt-1 font-monospace" style="font-size: 0.725rem;"
+                  id="perfilUid">-</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-3 bg-light rounded-4 border">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="fw-bold text-dark mb-0" style="font-size: 0.85rem;">
+                <i class="fa-solid fa-umbrella-beach text-danger me-2"></i>Saldos de Vacaciones (LFT México)
+              </h6>
+              <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">2026</span>
+            </div>
+            <div class="row g-2 mb-3 text-center">
+              <div class="col-4">
+                <div class="p-2 bg-white rounded-3 border">
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">Saldo Total</small>
+                  <strong class="fs-6 text-dark" id="perfilSaldoTotal">0 días</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 bg-white rounded-3 border">
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">Disponibles</small>
+                  <strong class="fs-6 text-success" id="perfilSaldoDisponible">0 días</strong>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 bg-white rounded-3 border">
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">Utilizados</small>
+                  <strong class="fs-6 text-muted" id="perfilSaldoTomados">0 días</strong>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small fw-semibold text-muted mb-1">
+                <span>Disponibilidad Actual</span>
+                <span id="perfilPctTexto">0% disponible</span>
+              </div>
+              <div class="progress" style="height: 8px; border-radius: 10px;">
+                <div id="perfilProgressBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%;"
+                  aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-0 px-4 pb-4 pt-0">
+          <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/app.js?v=0.00142"></script>
-  <script type="module" src="/firebase-config.js?v=0.00300"></script>
+  <script type="module" src="/app.js"></script>
+  <script type="module" src="/firebase-config.js"></script>
 </body>
 
 </html>

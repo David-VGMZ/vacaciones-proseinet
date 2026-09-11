@@ -1,34 +1,49 @@
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { auth } from "./firebase-config.js";
 
 // Login auth
-document.getElementById('login-form').addEventListener('submit', (e) => {
+document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-pass').value;
     const btnEntrar = document.getElementById('btnEntrar');
     const loginError = document.getElementById('login-error');
+
     btnEntrar.disabled = true;
     btnEntrar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Cargando...';
     loginError.style.display = 'none';
 
     if (email === '' || password === '') {
-        loginError.textContent = 'Por favor, complete todos los campos';
-        loginError.style.display = 'block';
-        btnEntrar.disabled = false;
-        btnEntrar.innerHTML = 'Entrar';
+        mostrarError('Por favor, complete todos los campos');
         return;
     }
 
-    if (email === 'gerente.operaciones@proseinet.com' && password === 'Admin123456') {
-        window.location.href = '/index.html';
-    } else {
-        loginError.textContent = 'Correo electrónico o contraseña incorrectos';
+    try {
+        // Autenticación real con Firebase
+        await signInWithEmailAndPassword(auth, email, password);
+        // Si es exitoso, redirigimos al inicio
+        window.location.href = '/';
+    } catch (error) {
+        console.error("Error de Firebase:", error.code);
+        // Manejo de errores amigable
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            mostrarError('Correo electrónico o contraseña incorrectos');
+        } else if (error.code === 'auth/too-many-requests') {
+            mostrarError('Demasiados intentos fallidos. Intenta más tarde.');
+        } else {
+            mostrarError('Ocurrió un error al iniciar sesión.');
+        }
+    }
+
+    function mostrarError(mensaje) {
+        loginError.textContent = mensaje;
         loginError.style.display = 'block';
         btnEntrar.disabled = false;
         btnEntrar.innerHTML = 'Entrar';
     }
 });
 
-// Toggle password login
+// Toggle password logic (Mantenemos tu lógica intacta)
 const passwordInput = document.getElementById('login-pass');
 const togglePassword = document.getElementById('toggle-password');
 

@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "firebase": "^12.17.1"
+  },
+  "main": "/index.html",
+  "scripts": {
+    "start": "node index.html"
+  }
+}

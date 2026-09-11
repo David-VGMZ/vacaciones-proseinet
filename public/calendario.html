@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/img/Logo-proseinet-rojo.png">
+    <title>Calendario - Gestor de Vacaciones Proseinet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css?v=0.0100">
+    <style>
+        /* Estilos del grid del calendario */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .calendar-cell {
+            min-height: 100px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 8px;
+            background: #fff;
+            transition: all 0.2s ease;
+        }
+
+        .calendar-cell:hover {
+            box-shadow: var(--shadow-subtle);
+            border-color: #cbd5e1;
+        }
+
+        .calendar-cell.empty {
+            background: transparent;
+            border: none;
+            pointer-events: none;
+        }
+
+        .calendar-cell.today {
+            background: var(--primary-light);
+            border: 1px solid var(--primary-color);
+        }
+
+        .vacation-badge {
+            font-size: 0.7rem;
+            padding: 4px 6px;
+            border-radius: 4px;
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        .vacation-aprobado {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid #a7f3d0;
+        }
+
+        .vacation-pendiente {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            border: 1px solid #fde68a;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="mainSidebar">
+        <div>
+            <div class="brand-section d-flex align-items-center gap-3">
+                <img src="/img/Logo-proseinet-rojo.png" alt="Logo Proseinet" class="brand-logo">
+                <div>
+                    <h5 class="fw-bold mb-0" style="color: var(--primary-color); font-size: 1.15rem;">Proseinet</h5>
+                    <small class="text-muted fw-semibold" style="font-size: 0.725rem;">Gestión de Vacaciones</small>
+                </div>
+            </div>
+
+            <div class="sidebar-title">Menú Principal</div>
+            <nav class="nav flex-column">
+                <a class="nav-link-custom" href="/"><i class="fa-solid fa-house-chimney"></i><span>Inicio</span></a>
+                <a class="nav-link-custom" href="/solicitudes"><i class="fa-solid fa-clipboard"></i><span>Mis
+                        Solicitudes</span></a>
+                <a class="nav-link-custom active" href="/calendario"><i
+                        class="fa-solid fa-calendar"></i><span>Calendario</span></a>
+                <a class="nav-link-custom" href="/empleados"><i
+                        class="fa-solid fa-user-group"></i><span>Empleados</span></a>
+            </nav>
+
+            <div class="sidebar-title">Administración</div>
+            <nav class="nav flex-column">
+                <a class="nav-link-custom" href="/configuracion"><i
+                        class="fa-solid fa-user-gear"></i><span>Configuración</span></a>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="leave-balance-mini">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small class="fw-bold text-dark">Saldo 2026</small>
+                    <span id="sidebarBadgeSaldo" class="badge bg-danger rounded-pill" style="font-size: 0.7rem;">15
+                        Días</span>
+                </div>
+                <div class="progress" style="height: 6px;">
+                    <div id="sidebarProgressBar" class="progress-bar bg-danger" role="progressbar" style="width: 75%;"
+                        aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small id="sidebarSaldoTexto" class="text-muted d-block mt-1" style="font-size: 0.7rem;">15 de 20 días
+                    disponibles</small>
+            </div>
+        </div>
+    </aside>
+
+    <!-- TOP HEADER -->
+    <header class="top-header">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-light d-lg-none p-2 border-0" id="btnToggleSidebar">
+                <i class="fa-solid fa-bars fs-5"></i>
+            </button>
+            <div class="header-title-section">
+                <h1>Panel de Calendario</h1>
+                <p>Consultar fechas tomadas y por tomar de Vacaciones y Días Festivos.</p>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+
+            <div class="dropdown">
+                <div class="action-icon-btn" style="cursor: pointer;" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="badge-dot d-none" id="badgeNotiUI"></span>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-center dropdown-menu-custom border-0 shadow" id="notiUI"
+                    style="min-width: 300px; max-height: 380px; overflow-y: auto;">
+                    <li class="p-3 text-center text-muted small">No hay notificaciones pendientes</li>
+                </ul>
+            </div>
+
+            <div class="dropdown">
+                <div class="user-profile-pill" data-bs-toggle="dropdown" aria-expanded="false">
+                    <div id="userIniciales" class="avatar-circle">..</div>
+                    <div class="d-none d-md-flex flex-column text-start">
+                        <span id="userNameUI" class="fw-bold text-dark lh-1"
+                            style="font-size: 0.85rem;">Cargando...</span>
+                        <small id="userRoleUI" class="text-muted lh-1 mt-1"
+                            style="font-size: 0.725rem;">Cargando...</small>
+                    </div>
+                    <i class="fa-solid fa-chevron-down ms-1 text-muted" style="font-size: 0.75rem;"></i>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom border-0 shadow">
+                    <li><a class="dropdown-item dropdown-item-custom" href="#"><i
+                                class="fa-solid fa-user me-2 text-danger"></i>
+                            Mi Perfil</a></li>
+                    <li><a class="dropdown-item dropdown-item-custom" href="#"><i
+                                class="fa-solid fa-sliders me-2 text-muted"></i>
+                            Preferencias</a></li>
+                    <li>
+                        <hr class="dropdown-divider opacity-50">
+                    </li>
+                    <li><a onclick="cerrarSesion()" id="logoutUI" class="dropdown-item dropdown-item-custom text-danger"
+                            href="#"><i class="fa-solid fa-right-from-bracket me-2"></i> Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <div class="content-wrapper">
+            <div class="row g-4 align-items-stretch">
+
+                <div class="col-12 col-md-3 col-xl-2">
+                    <div class="dashboard-card h-100 d-flex flex-column p-3">
+
+                        <!-- Perfil -->
+                        <div class="text-center mb-3">
+                            <div id="userInicialesCalendar" class="avatar-circle mx-auto mb-2"
+                                style="width: 54px; height: 54px; font-size: 1.2rem;">US</div>
+                            <h6 id="userNameCalendar" class="fw-bold text-dark mb-0">Usuario</h6>
+                            <small id="userRoleCalendar" class="text-muted" style="font-size: 0.75rem;">Cargo</small>
+                        </div>
+
+                        <hr class="opacity-25 my-2">
+
+                        <!-- KPIs del Usuario -->
+                        <div class="py-2">
+                            <div class="mb-3">
+                                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Días de
+                                    vacaciones:</small>
+                                <span id="calDiasTotal" class="fs-5 fw-bold text-dark">0</span>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Días
+                                    tomados:</small>
+                                <span id="calDiasTomados" class="fs-5 fw-bold text-danger">0</span>
+                            </div>
+                            <div class="mb-2">
+                                <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Días
+                                    pendientes a tomar:</small>
+                                <span id="calDiasPendientes" class="fs-5 fw-bold text-success">0</span>
+                            </div>
+                        </div>
+
+                        <hr class="opacity-25 my-2">
+
+                        <!-- Lista de Fechas Tomadas -->
+                        <h6 class="fw-bold text-dark mt-2 mb-3" style="font-size: 0.8rem;">
+                            <i class="fa-solid fa-clock-rotate-left text-danger me-1"></i> Fechas Tomadas
+                        </h6>
+                        <div class="flex-grow-1 overflow-auto" style="max-height: 250px;">
+                            <ul id="calFechasList" class="list-unstyled mb-0">
+                                <!-- Renderizado por JS -->
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- COLUMNA DERECHA: Calendario UI -->
+                <div class="col-12 col-md-9 col-xl-10">
+                    <div class="dashboard-card h-100">
+                        <!-- Controles del mes -->
+                        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                            <button class="btn btn-sm btn-light fw-semibold" id="btnPrevMonth"><i
+                                    class="fa-solid fa-chevron-left"></i> Anterior</button>
+                            <h4 id="monthYearDisplay" class="mb-0 fw-bold text-dark text-capitalize">Agosto 2026</h4>
+                            <button class="btn btn-sm btn-light fw-semibold" id="btnNextMonth">Siguiente <i
+                                    class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+
+                        <!-- Días de la semana (Lunes a Domingo) -->
+                        <div class="calendar-grid mb-2">
+                            <div class="calendar-day-header">Lun</div>
+                            <div class="calendar-day-header">Mar</div>
+                            <div class="calendar-day-header">Mié</div>
+                            <div class="calendar-day-header">Jue</div>
+                            <div class="calendar-day-header">Vie</div>
+                            <div class="calendar-day-header">Sáb</div>
+                            <div class="calendar-day-header text-danger">Dom</div>
+                        </div>
+
+                        <!-- Cuadrícula dinámica -->
+                        <div id="calendarBody" class="calendar-grid"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="/app.js"></script>
+    <script type="module" src="/calendario.js?v=0.101"></script>
+</body>
+
+</html>
