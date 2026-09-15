@@ -1,4 +1,4 @@
-import { AppState, calcularDiasDerechoLFT, getIniciales } from '/app.js';
+import { AppState, calcularDiasDerechoLFT, getIniciales, notifyReveal, fechaLocalStr } from '/app.js';
 import { db } from '/firebase-config.js';
 import { doc, updateDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
@@ -106,6 +106,12 @@ export function renderConfiguracionPage() {
     const container = document.getElementById('configuracionContainer');
     if (!container) return;
 
+    if (AppState.cargando && AppState.cargando.feriado) {
+        // Ya se maneja en renderProximoFeriado, pero también podemos mostrar spinner aquí
+        // si la sección de configuración muestra el feriado
+        return;
+    }
+
     const esOperador = verificarRolOperador();
 
     // Actualizar badge de rol en el banner superior
@@ -169,6 +175,33 @@ function actualizarKPIsConfig() {
 export function renderTablaEmpleadosConfig(filtroDepto = currentConfigDepto, searchQuery = currentConfigSearch) {
     currentConfigDepto = filtroDepto;
     currentConfigSearch = searchQuery;
+
+    if (AppState.cargando && AppState.cargando.empleados) {
+        const tbody = document.getElementById('configEmpleadosTableBody');
+        if (tbody) {
+            const filas = Array.from({ length: 4 }, () => `
+                <tr class="skeleton-row">
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="skeleton" style="width: 38px; height: 38px; border-radius: 50%;"></div>
+                            <div>
+                                <span class="skeleton block" style="width: 150px; height: 0.85rem; margin-bottom: 0.4rem;"></span>
+                                <span class="skeleton block" style="width: 110px; height: 0.7rem;"></span>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="skeleton skel-bar" style="width: 70px; height: 1.3rem;"></span></td>
+                    <td><span class="skeleton" style="width: 96px; height: 1rem;"></span></td>
+                    <td><span class="skeleton skel-bar" style="width: 80px; height: 1.3rem;"></span></td>
+                    <td><span class="skeleton" style="width: 74px; height: 1rem;"></span></td>
+                    <td class="text-end">
+                        <span class="skeleton" style="width: 110px; height: 2rem; border-radius: 10px;"></span>
+                    </td>
+                </tr>`).join('');
+            tbody.innerHTML = filas;
+        }
+        return;
+    }
 
     const tbody = document.getElementById('configEmpleadosTableBody');
     if (!tbody) return;
@@ -275,6 +308,7 @@ export function renderTablaEmpleadosConfig(filtroDepto = currentConfigDepto, sea
     });
 
     tbody.innerHTML = html;
+    notifyReveal(tbody);
 }
 
 window.abrirModalFechaIngreso = function (empId) {
@@ -469,7 +503,7 @@ export function initConfiguracionPage() {
                 return;
             }
 
-            const hoyStr = new Date().toISOString().split('T')[0];
+            const hoyStr = fechaLocalStr();
             if (fechaStr > hoyStr) {
                 Swal.fire('Fecha Inválida', 'La fecha de ingreso laboral no puede ser una fecha futura.', 'warning');
                 return;

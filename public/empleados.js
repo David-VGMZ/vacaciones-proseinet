@@ -1,4 +1,4 @@
-import { AppState, calcularDiasDerechoLFT, getIniciales } from "/app.js";
+import { AppState, calcularDiasDerechoLFT, getIniciales, notifyReveal } from "/app.js";
 
 let currentDepto = 'all';
 let currentSearch = '';
@@ -6,6 +6,40 @@ let currentSearch = '';
 export function renderEmpleadosPage(filtroDepto = currentDepto, searchQuery = currentSearch) {
     currentDepto = filtroDepto;
     currentSearch = searchQuery;
+
+    if (AppState.cargando && AppState.cargando.empleados) {
+        const grid = document.getElementById('empleadosGrid');
+        if (grid) {
+            const cards = Array.from({ length: 6 }, () => `
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="p-4 rounded-4 bg-white border-0 shadow h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="skeleton" style="width: 46px; height: 46px; border-radius: 50%;"></div>
+                                    <div>
+                                        <span class="skeleton block" style="width: 140px; height: 0.9rem; margin-bottom: 0.5rem;"></span>
+                                        <span class="skeleton block" style="width: 100px; height: 0.7rem;"></span>
+                                    </div>
+                                </div>
+                                <span class="skeleton skel-bar" style="width: 52px; height: 1.15rem;"></span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <span class="skeleton skel-bar" style="width: 110px; height: 1.15rem;"></span>
+                                <span class="skeleton" style="width: 86px; height: 0.8rem;"></span>
+                            </div>
+                            <div class="skeleton block" style="height: 6px; border-radius: 10px; margin-bottom: 0.5rem;"></div>
+                        </div>
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                            <span class="skeleton" style="width: 70px; height: 0.7rem;"></span>
+                            <span class="skeleton" style="width: 92px; height: 2.1rem; border-radius: 10px;"></span>
+                        </div>
+                    </div>
+                </div>`).join('');
+            grid.innerHTML = cards;
+        }
+        return;
+    }
 
     const grid = document.getElementById('empleadosGrid');
     if (!grid) return;
@@ -70,6 +104,8 @@ export function renderEmpleadosPage(filtroDepto = currentDepto, searchQuery = cu
             </div>`;
         grid.appendChild(col);
     });
+
+    notifyReveal(grid);
 }
 
 window.verDetalleEmpleado = function (id) {

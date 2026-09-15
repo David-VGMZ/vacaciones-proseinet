@@ -11,7 +11,7 @@
     ],
     "headers": [
       {
-        "source": "**/*.(html)",
+        "source": "**",
         "headers": [
           {
             "key": "Cache-Control",
@@ -24,7 +24,7 @@
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "max-age=3600, must-revalidate"
+            "value": "max-age=0, must-revalidate"
           }
         ]
       }

@@ -33,8 +33,79 @@ export const AppState = {
     empleados: [],
     solicitudes: [],
     notificaciones: [],
-    filtroActual: "all"
+    filtroActual: "all",
+    cargando: {
+        empleados: true
+    },
+    solicitudesCargadas: false
 };
+
+// --- ESQUELETOS DE CARGA (shimmer) ---
+
+function skeletonFilaSolicitud(w1, w2) {
+    return `
+        <tr class="skeleton-row">
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton" style="width: 32px; height: 32px; border-radius: 50%;"></div>
+                    <div>
+                        <span class="skeleton block" style="width: ${w1}; height: 0.85rem; margin-bottom: 0.4rem;"></span>
+                        <span class="skeleton block" style="width: ${w2}; height: 0.7rem;"></span>
+                    </div>
+                </div>
+            </td>
+            <td><span class="skeleton" style="width: 150px; height: 1rem;"></span></td>
+            <td><span class="skeleton" style="width: 52px; height: 1rem;"></span></td>
+            <td><span class="skeleton skel-bar" style="width: 96px; height: 1.4rem;"></span></td>
+            <td class="text-end">
+                <span class="skeleton" style="width: 34px; height: 34px; border-radius: 10px;"></span>
+            </td>
+        </tr>`;
+}
+
+function skeletonFilasSolicitudes() {
+    return skeletonFilaSolicitud("130px", "82px") +
+        skeletonFilaSolicitud("140px", "90px") +
+        skeletonFilaSolicitud("120px", "76px");
+}
+
+function skeletonItemAusencia(w1, w2) {
+    return `
+        <div class="d-flex justify-content-between align-items-center gap-3 py-2">
+            <div class="d-flex align-items-center gap-3">
+                <div class="skeleton" style="width: 36px; height: 36px; border-radius: 50%;"></div>
+                <div>
+                    <span class="skeleton block" style="width: ${w1}; height: 0.85rem; margin-bottom: 0.45rem;"></span>
+                    <span class="skeleton block" style="width: ${w2}; height: 0.7rem;"></span>
+                </div>
+            </div>
+            <div class="text-end">
+                <span class="skeleton block skel-bar" style="width: 64px; height: 1.3rem; margin-bottom: 0.35rem;"></span>
+                <span class="skeleton block" style="width: 56px; height: 0.7rem; margin-left: auto;"></span>
+            </div>
+        </div>`;
+}
+
+function skeletonItemsAusencias() {
+    return skeletonItemAusencia("150px", "90px") +
+        skeletonItemAusencia("135px", "100px") +
+        skeletonItemAusencia("160px", "86px") +
+        skeletonItemAusencia("128px", "94px");
+}
+
+export function notifyReveal(el) {
+    if (!el) return;
+    el.classList.remove('reveal-content');
+    void el.offsetWidth;
+    el.classList.add('reveal-content');
+}
+
+function rellenarTexto(el, valor) {
+    if (!el) return;
+    const teniaEsqueleto = !!(el.querySelector && el.querySelector('.skeleton'));
+    el.textContent = valor;
+    if (teniaEsqueleto) notifyReveal(el);
+}
 
 export function calcularDiasDerechoLFT(aniosAntiguedad) {
     if (aniosAntiguedad < 1) return 0;
@@ -150,6 +221,13 @@ export function getIniciales(nombre = "") {
     return nombre.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'US';
 }
 
+export function fechaLocalStr(d = new Date()) {
+    if (typeof d === 'string') d = new Date(d + 'T00:00:00');
+    const mes = String(d.getMonth() + 1).padStart(2, '0');
+    const dia = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
 export async function cargarEmpleadosDesdeFirestore() {
     try {
         const q = query(collection(db, "usuarios"));
@@ -180,6 +258,8 @@ export async function cargarEmpleadosDesdeFirestore() {
 
             console.log("Empleados cargados desde Firestore:", AppState.empleados);
 
+            AppState.cargando.empleados = false;
+
             if (document.getElementById('empleadosGrid')) {
                 renderEmpleadosPage();
             }
@@ -202,6 +282,8 @@ function suscribirSolicitudesFirestore() {
             idFirestore: docSnap.id,
             ...docSnap.data()
         }));
+
+        AppState.solicitudesCargadas = true;
 
         renderRequestsTable();
         updateKPIs();
@@ -247,6 +329,31 @@ function inicializarUI() {
         initConfiguracionPage();
         renderConfiguracionPage();
     }
+
+    const btnToggle = document.getElementById('btnToggleSidebar');
+    const sidebar = document.getElementById('mainSidebar');
+    if (btnToggle && sidebar) {
+        let backdrop = document.createElement('div');
+        backdrop.className = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+
+        btnToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('show');
+            backdrop.classList.toggle('active');
+        });
+
+        backdrop.addEventListener('click', () => {
+            sidebar.classList.remove('show');
+            backdrop.classList.remove('active');
+        });
+
+        sidebar.querySelectorAll('.nav-link-custom').forEach(link => {
+            link.addEventListener('click', () => {
+                sidebar.classList.remove('show');
+                backdrop.classList.remove('active');
+            });
+        });
+    }
 }
 
 // Función para cerrar sesión
@@ -261,6 +368,14 @@ window.cerrarSesion = async function () {
 }
 
 // --- RENDERIZADO DINÁMICO DE LA TABLA DE SOLICITUDES ---
+function esSolicitudVisibleParaElUsuario(s) {
+    if (!AppState.usuario || !AppState.usuario.uid) return false;
+    if (verificarRolOperador()) return true;
+    return (s.uid_empleado && s.uid_empleado === AppState.usuario.uid) ||
+        (s.empleado && AppState.usuario.nombre &&
+         s.empleado.trim().toLowerCase() === AppState.usuario.nombre.trim().toLowerCase());
+}
+
 function renderRequestsTable(filtro = AppState.filtroActual) {
     AppState.filtroActual = filtro;
     const tableBody = document.getElementById('requestsTableBody');
@@ -268,7 +383,13 @@ function renderRequestsTable(filtro = AppState.filtroActual) {
 
     tableBody.innerHTML = '';
 
+    if (!AppState.solicitudesCargadas) {
+        tableBody.innerHTML = skeletonFilasSolicitudes();
+        return;
+    }
+
     const solicitudesFiltradas = AppState.solicitudes.filter(req => {
+        if (!esSolicitudVisibleParaElUsuario(req)) return false;
         if (filtro === 'all') return true;
         return req.estado === filtro;
     });
@@ -282,6 +403,7 @@ function renderRequestsTable(filtro = AppState.filtroActual) {
                 </td>
             </tr>
         `;
+        notifyReveal(tableBody);
         return;
     }
 
@@ -320,12 +442,15 @@ function renderRequestsTable(filtro = AppState.filtroActual) {
             `;
         tableBody.appendChild(tr);
     });
+
+    notifyReveal(tableBody);
 }
 
 function updateKPIs() {
     const kpiDias = document.getElementById('kpiDiasDisponibles');
     if (kpiDias) {
         kpiDias.innerHTML = `${AppState.usuario.saldoDisponible} <span class="fs-6 text-muted font-normal">días</span>`;
+        notifyReveal(kpiDias);
     }
 
     const badgeSaldo = document.getElementById('badgeSaldoDisponibilidad');
@@ -348,17 +473,24 @@ function updateKPIs() {
         sidebarProgressBar.setAttribute('aria-valuenow', pct);
     }
 
-    const pendientesCount = AppState.solicitudes.filter(s => s.estado === 'pendiente').length;
-    const aprobadasCount = AppState.solicitudes.filter(s => s.estado === 'aprobado').length;
+    if (!AppState.solicitudesCargadas) return;
 
-    const hoyStr = new Date().toISOString().split('T')[0];
-    const enVacacionesHoy = AppState.solicitudes.filter(s => {
+    const solicitudesVisibles = AppState.solicitudes.filter(s => esSolicitudVisibleParaElUsuario(s));
+    const pendientesCount = solicitudesVisibles.filter(s => s.estado === 'pendiente').length;
+    const aprobadasCount = solicitudesVisibles.filter(s => s.estado === 'aprobado').length;
+
+    const hoyStr = fechaLocalStr();
+    const enVacacionesHoy = solicitudesVisibles.filter(s => {
         return s.estado === 'aprobado' && s.fechaInicio <= hoyStr && s.fechaFin >= hoyStr;
     }).length;
 
-    if (document.getElementById('kpiPendientes')) document.getElementById('kpiPendientes').textContent = pendientesCount;
-    if (document.getElementById('kpiAprobadas')) document.getElementById('kpiAprobadas').textContent = aprobadasCount;
-    if (document.getElementById('kpiEnVacaciones')) document.getElementById('kpiEnVacaciones').innerHTML = `${enVacacionesHoy} <span class="fs-6 text-muted font-normal">personas</span>`;
+    const kpiPendientes = document.getElementById('kpiPendientes');
+    const kpiAprobadas = document.getElementById('kpiAprobadas');
+    const kpiEnVacaciones = document.getElementById('kpiEnVacaciones');
+
+    if (kpiPendientes) { kpiPendientes.textContent = pendientesCount; notifyReveal(kpiPendientes); }
+    if (kpiAprobadas) { kpiAprobadas.textContent = aprobadasCount; notifyReveal(kpiAprobadas); }
+    if (kpiEnVacaciones) { kpiEnVacaciones.innerHTML = `${enVacacionesHoy} <span class="fs-6 text-muted font-normal">personas</span>`; notifyReveal(kpiEnVacaciones); }
 }
 
 function initVacationCalculator() {
@@ -379,7 +511,7 @@ function initVacationCalculator() {
                 while (curDate <= end) {
                     const dayOfWeek = curDate.getDay();
                     const dateString = curDate.toISOString().split('T')[0];
-                    if (dayOfWeek !== 0 && dayOfWeek !== 6 && !FERIADOS_OFICIALES_MX.includes(dateString)) {
+                    if (dayOfWeek !== 0 && !FERIADOS_OFICIALES_MX.includes(dateString)) {
                         count++;
                     }
                     curDate.setDate(curDate.getDate() + 1);
@@ -401,8 +533,12 @@ function initVacationCalculator() {
     }
 
     if (form) {
+        let guardandoSolicitud = false;
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            if (guardandoSolicitud) return;
 
             const diasSolicitados = calcularDias();
             if (diasSolicitados <= 0) {
@@ -422,8 +558,8 @@ function initVacationCalculator() {
             const motivo = document.getElementById('motivoSolicitud').value || 'Sin observaciones adicionales.';
 
             const options = { day: '2-digit', month: 'short' };
-            const dInicio = new Date(fInicio).toLocaleDateString('es-ES', options);
-            const dFin = new Date(fFin).toLocaleDateString('es-ES', options);
+            const dInicio = new Date(fInicio + 'T00:00:00').toLocaleDateString('es-MX', options);
+            const dFin = new Date(fFin + 'T00:00:00').toLocaleDateString('es-MX', options);
             const año = new Date(fInicio + 'T00:00:00').getFullYear();
             const fechasTexto = `${dInicio} - ${dFin} ${año}`;
 
@@ -444,6 +580,13 @@ function initVacationCalculator() {
             };
 
             try {
+                guardandoSolicitud = true;
+                const btnEnviar = form.querySelector('button[type="submit"]');
+                if (btnEnviar) {
+                    btnEnviar.setAttribute('disabled', 'disabled');
+                    btnEnviar.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Enviando...';
+                }
+
                 await addDoc(collection(db, "solicitudes"), nuevaSolicitud);
 
                 AppState.notificaciones.unshift({
@@ -464,6 +607,13 @@ function initVacationCalculator() {
             } catch (error) {
                 console.error("Error al guardar la solicitud:", error);
                 Swal.fire('Error', 'Hubo un error al registrar tu solicitud.', 'error');
+            } finally {
+                guardandoSolicitud = false;
+                const btnEnviar = form.querySelector('button[type="submit"]');
+                if (btnEnviar) {
+                    btnEnviar.removeAttribute('disabled');
+                    btnEnviar.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Enviar Solicitud';
+                }
             }
         });
     }
@@ -655,14 +805,20 @@ function renderProximasAusencias() {
     const container = document.querySelector('.absence-list');
     if (!container) return;
 
-    const hoyStr = new Date().toISOString().split('T')[0];
+    if (!AppState.solicitudesCargadas) {
+        container.innerHTML = skeletonItemsAusencias();
+        return;
+    }
+
+    const hoyStr = fechaLocalStr();
     const ausencias = AppState.solicitudes
         .filter(s => s.estado === 'aprobado' && s.fechaFin >= hoyStr)
-        .sort((a, b) => new Date(a.fechaInicio) - new Date(b.fechaInicio))
+        .sort((a, b) => new Date(a.fechaInicio + 'T00:00:00') - new Date(b.fechaInicio + 'T00:00:00'))
         .slice(0, 4);
 
     if (ausencias.length === 0) {
         container.innerHTML = `<div class="text-center text-muted small py-3">No hay ausencias programadas próximamente</div>`;
+        notifyReveal(container);
         return;
     }
 
@@ -689,13 +845,14 @@ function renderProximasAusencias() {
             </div>`;
     });
     container.innerHTML = html;
+    notifyReveal(container);
 }
 
 export function renderProximoFeriado() {
     const cardFeriado = document.querySelector('.dashboard-card .p-3.rounded-3');
     if (!cardFeriado) return;
 
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = fechaLocalStr();
     const proximo = FERIADOS_OFICIALES_MX.find(f => f >= hoy);
 
     if (proximo) {
@@ -740,7 +897,8 @@ export function notificaciones() {
     const badgeNotiUI = document.getElementById('badgeNotiUI');
 
     // Generar notificaciones únicamente cuando un usuario realice una solicitud de vacaciones
-    if (!AppState.solicitudes || AppState.solicitudes.length === 0) {
+    const solicitudesVisibles = (AppState.solicitudes || []).filter(s => esSolicitudVisibleParaElUsuario(s));
+    if (solicitudesVisibles.length === 0) {
         AppState.notificaciones = [];
         if (badgeNotiUI) badgeNotiUI.classList.add('d-none');
         if (notiUI) {
@@ -754,7 +912,7 @@ export function notificaciones() {
     }
 
     // Ordenar solicitudes por fecha de creación (más recientes primero)
-    const solicitudesOrdenadas = [...AppState.solicitudes].sort((a, b) => {
+    const solicitudesOrdenadas = [...solicitudesVisibles].sort((a, b) => {
         const fechaA = a.creadoEn ? new Date(a.creadoEn) : 0;
         const fechaB = b.creadoEn ? new Date(b.creadoEn) : 0;
         return fechaB - fechaA;
@@ -770,7 +928,7 @@ export function notificaciones() {
         if (req.creadoEn) {
             try {
                 const f = new Date(req.creadoEn);
-                fechaTexto = f.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) + ' ' + f.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                fechaTexto = f.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' }) + ' ' + f.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
             } catch (e) {
                 fechaTexto = req.fechasTexto || 'Reciente';
             }
@@ -847,27 +1005,35 @@ function initBuscadorEmpleado() {
 export function cargarInfoUsuarios() {
     if (!AppState.usuario) return;
 
-    if (document.getElementById('userNameUI')) document.getElementById('userNameUI').textContent = AppState.usuario.nombre || 'Usuario';
-    if (document.getElementById('userRoleUI')) document.getElementById('userRoleUI').textContent = AppState.usuario.cargo || 'Colaborador';
-    if (document.getElementById('userNameTitle')) document.getElementById('userNameTitle').textContent = AppState.usuario.nombre ? AppState.usuario.nombre.split(' ')[0] : 'Usuario';
-    if (document.getElementById('userIniciales')) document.getElementById('userIniciales').textContent = AppState.usuario.iniciales || 'US';
+    rellenarTexto(document.getElementById('userNameUI'), AppState.usuario.nombre || 'Usuario');
+    rellenarTexto(document.getElementById('userRoleUI'), AppState.usuario.cargo || 'Colaborador');
+    rellenarTexto(document.getElementById('userNameTitle'), AppState.usuario.nombre ? AppState.usuario.nombre.split(' ')[0] : '');
+    rellenarTexto(document.getElementById('userIniciales'), AppState.usuario.iniciales || 'US');
 
-    if (document.getElementById('userNameCalendar')) document.getElementById('userNameCalendar').textContent = AppState.usuario.nombre || 'Usuario';
-    if (document.getElementById('userRoleCalendar')) document.getElementById('userRoleCalendar').textContent = AppState.usuario.cargo || 'Colaborador';
-    if (document.getElementById('userInicialesCalendar')) document.getElementById('userInicialesCalendar').textContent = AppState.usuario.iniciales || 'US';
+    rellenarTexto(document.getElementById('userNameCalendar'), AppState.usuario.nombre || 'Usuario');
+    rellenarTexto(document.getElementById('userRoleCalendar'), AppState.usuario.cargo || 'Colaborador');
+    rellenarTexto(document.getElementById('userInicialesCalendar'), AppState.usuario.iniciales || 'US');
 
     // Rellenar información de días en el panel izquierdo del calendario
     const total = AppState.usuario.saldoTotal || 0;
     const pendientes = AppState.usuario.saldoDisponible ?? total;
     const tomados = Math.max(0, total - pendientes);
 
-    if (document.getElementById('calDiasTotal')) document.getElementById('calDiasTotal').textContent = total;
-    if (document.getElementById('calDiasTomados')) document.getElementById('calDiasTomados').textContent = tomados;
-    if (document.getElementById('calDiasPendientes')) document.getElementById('calDiasPendientes').textContent = pendientes;
+    rellenarTexto(document.getElementById('calDiasTotal'), total);
+    rellenarTexto(document.getElementById('calDiasTomados'), tomados);
+    rellenarTexto(document.getElementById('calDiasPendientes'), pendientes);
 
     // Rellenar la lista de fechas tomadas/solicitadas
     const listaFechas = document.getElementById('calFechasList');
     if (listaFechas) {
+        if (!AppState.solicitudesCargadas) {
+            listaFechas.innerHTML = `
+                <li class="skeleton" style="display: block; height: 3.1rem; border-radius: 10px; margin-bottom: 0.5rem;"></li>
+                <li class="skeleton" style="display: block; height: 3.1rem; border-radius: 10px; margin-bottom: 0.5rem;"></li>
+                <li class="skeleton" style="display: block; height: 3.1rem; border-radius: 10px;"></li>`;
+            return;
+        }
+
         listaFechas.innerHTML = '';
         const misVacaciones = (AppState.solicitudes || []).filter(req => {
             const esMismaPersona = (req.uid_empleado && AppState.usuario.uid && req.uid_empleado === AppState.usuario.uid) ||
@@ -898,6 +1064,7 @@ export function cargarInfoUsuarios() {
                 listaFechas.appendChild(li);
             });
         }
+        notifyReveal(listaFechas);
     }
 }
 
@@ -905,12 +1072,22 @@ export function initModalPerfil() {
     const modalEl = document.getElementById('modalPerfilUsuario');
     if (modalEl) {
         modalEl.addEventListener('show.bs.modal', () => {
-            mostrarPerfilUsuario();
+            rellenarPerfilUsuario();
+        });
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            const modalesAbiertos = document.querySelectorAll('.modal.show');
+            if (modalesAbiertos.length === 0) {
+                document.body.classList.remove('modal-open');
+                document.body.style.paddingRight = '';
+                document.body.style.overflow = '';
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            }
         });
     }
 }
 
-export function mostrarPerfilUsuario() {
+export function rellenarPerfilUsuario() {
     if (!AppState.usuario) return;
     const modalEl = document.getElementById('modalPerfilUsuario');
     if (!modalEl) return;
@@ -923,8 +1100,8 @@ export function mostrarPerfilUsuario() {
         avatar.style.background = u.avatar || 'var(--primary-gradient)';
     }
 
-    if (document.getElementById('perfilNombre')) document.getElementById('perfilNombre').textContent = u.nombre || 'Usuario';
-    if (document.getElementById('perfilCargo')) document.getElementById('perfilCargo').textContent = `${u.cargo || 'Colaborador'} | ${u.area || u.depto || 'General'}`;
+    rellenarTexto(document.getElementById('perfilNombre'), u.nombre || 'Usuario');
+    rellenarTexto(document.getElementById('perfilCargo'), `${u.cargo || 'Colaborador'} | ${u.area || u.depto || 'General'}`);
 
     const rolBadge = document.getElementById('perfilRolBadge');
     if (rolBadge) {
@@ -952,7 +1129,7 @@ export function mostrarPerfilUsuario() {
     if (u.fechaIngreso && u.fechaIngreso !== 'No registrada') {
         try {
             const f = new Date(u.fechaIngreso + 'T00:00:00');
-            fechaTexto = f.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+            fechaTexto = f.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
 
             const hoy = new Date();
             let anios = hoy.getFullYear() - f.getFullYear();
@@ -994,10 +1171,16 @@ export function mostrarPerfilUsuario() {
         bar.style.width = `${pct}%`;
         bar.setAttribute('aria-valuenow', pct);
     }
+}
+
+export function mostrarPerfilUsuario() {
+    const modalEl = document.getElementById('modalPerfilUsuario');
+    if (!modalEl) return;
+
+    rellenarPerfilUsuario();
 
     const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
     bsModal.show();
-
 }
 
 window.mostrarPerfilUsuario = mostrarPerfilUsuario;

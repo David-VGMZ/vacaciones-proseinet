@@ -13,7 +13,7 @@
     rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="/css/style.css?v=0.00557">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
@@ -24,8 +24,8 @@
       <div class="brand-section d-flex align-items-center gap-3">
         <img src="/img/Logo-proseinet-rojo.png" alt="Logo Proseinet" class="brand-logo">
         <div>
-          <h5 class="fw-bold mb-0" style="color: var(--primary-color); font-size: 1.15rem;">Proseinet</h5>
-          <small class="text-muted fw-semibold" style="font-size: 0.725rem;">Gestión de Vacaciones</small>
+          <h5 class="fw-bold mb-0" style="color: white; font-size: 1.15rem;">Proseinet</h5>
+          <small class="text-light fw-semibold" style="font-size: 0.725rem;">Gestión de Vacaciones</small>
         </div>
       </div>
 
@@ -49,13 +49,13 @@
       <div class="leave-balance-mini">
         <div class="d-flex justify-content-between align-items-center mb-1">
           <small class="fw-bold text-dark">Saldo 2026</small>
-          <span id="sidebarBadgeSaldo" class="badge bg-danger rounded-pill" style="font-size: 0.7rem;">15 Días</span>
+          <span id="sidebarBadgeSaldo" class="badge bg-danger rounded-pill" style="font-size: 0.7rem;">0 Días</span>
         </div>
         <div class="progress" style="height: 6px;">
-          <div id="sidebarProgressBar" class="progress-bar bg-danger" role="progressbar" style="width: 75%;"
-            aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+          <div id="sidebarProgressBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%;"
+            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
-        <small id="sidebarSaldoTexto" class="text-muted d-block mt-1" style="font-size: 0.7rem;">15 de 20 días
+        <small id="sidebarSaldoTexto" class="text-muted d-block mt-1" style="font-size: 0.7rem;">0 de 0 días
           disponibles</small>
       </div>
     </div>
@@ -64,10 +64,12 @@
   <!-- TOP HEADER -->
   <header class="top-header">
     <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-light d-lg-none p-2 border-0" id="btnToggleSidebar">
+        <i class="fa-solid fa-bars fs-5"></i>
+      </button>
       <div class="search-box">
-        <i class="fa-solid fa-search"></i>
+        <i class="fa-solid fa-search me-2"></i>
         <input type="text" id="inputBuscarEmpleado" class="border-0 search-input" placeholder="Buscar...">
-        <i class="fa-solid fa-xmark"></i>
       </div>
     </div>
 
@@ -78,23 +80,28 @@
           <span class="badge-dot d-none" id="badgeNotiUI"></span>
         </div>
         <ul class="dropdown-menu dropdown-menu-center dropdown-menu-custom border-0 shadow" id="notiUI"
-          style="min-width: 300px; max-height: 380px; overflow-y: auto;">
+          style="width: min(300px, 90vw); max-height: 380px; overflow-y: auto;">
           <li class="p-3 text-center text-muted small">No hay notificaciones pendientes</li>
         </ul>
       </div>
 
       <div class="dropdown">
         <div class="user-profile-pill" data-bs-toggle="dropdown" aria-expanded="false">
-          <div class="avatar-circle">JP</div>
+          <div class="avatar-circle" id="userIniciales">
+            <span class="skeleton" style="width: 26px; height: 26px; border-radius: 50%;"></span>
+          </div>
           <div class="d-none d-md-flex flex-column text-start">
-            <span id="userNameUI" class="fw-bold text-dark lh-1" style="font-size: 0.85rem;">Juan Pérez</span>
-            <small id="userRoleUI" class="text-muted lh-1 mt-1" style="font-size: 0.725rem;">Gerente de
-              Operaciones</small>
+            <span id="userNameUI" class="fw-bold text-dark lh-1" style="font-size: 0.85rem;">
+              <span class="skeleton block" style="width: 110px; height: 0.8rem; vertical-align: middle;"></span>
+            </span>
+            <small id="userRoleUI" class="text-muted lh-1 mt-1" style="font-size: 0.725rem;">
+              <span class="skeleton block" style="width: 150px; height: 0.7rem; margin-top: 0.25rem;"></span>
+            </small>
           </div>
           <i class="fa-solid fa-chevron-down ms-1 text-muted" style="font-size: 0.75rem;"></i>
         </div>
         <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom border-0 shadow">
-          <li><a class="dropdown-item dropdown-item-custom" href="#"><i class="fa-solid fa-user me-2 text-danger"></i>
+          <li><a class="dropdown-item dropdown-item-custom" href="#" data-bs-toggle="modal" data-bs-target="#modalPerfilUsuario"><i class="fa-solid fa-user me-2 text-danger"></i>
               Mi Perfil</a></li>
           <li>
             <hr class="dropdown-divider opacity-50">
@@ -117,7 +124,7 @@
               class="fa-solid fa-file-signature text-danger ms-1"></i></h2>
           <p class="text-muted mb-0">Consulta tu historial de permisos solicitados y su estado de aprobación.</p>
         </div>
-        <button class="btn btn-proseinet" data-bs-toggle="modal" data-bs-target="#modalNuevaSolicitud">
+        <button class="btn btn-proseinet text-center" data-bs-toggle="modal" data-bs-target="#modalNuevaSolicitud">
           <i class="fa-solid fa-plus me-1"></i> Nueva Solicitud
         </button>
       </div>
@@ -146,7 +153,57 @@
               </tr>
             </thead>
             <tbody id="requestsTableBody">
-              <!-- Renderizado dinámico desde app.js -->
+              <tr class="skeleton-row">
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton" style="width: 32px; height: 32px; border-radius: 50%;"></div>
+                    <div>
+                      <span class="skeleton block" style="width: 130px; height: 0.85rem; margin-bottom: 0.4rem;"></span>
+                      <span class="skeleton block" style="width: 82px; height: 0.7rem;"></span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="skeleton" style="width: 150px; height: 1rem;"></span></td>
+                <td><span class="skeleton" style="width: 52px; height: 1rem;"></span></td>
+                <td><span class="skeleton skel-bar" style="width: 96px; height: 1.4rem;"></span></td>
+                <td class="text-end">
+                  <span class="skeleton" style="width: 34px; height: 34px; border-radius: 10px;"></span>
+                </td>
+              </tr>
+              <tr class="skeleton-row">
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton" style="width: 32px; height: 32px; border-radius: 50%;"></div>
+                    <div>
+                      <span class="skeleton block" style="width: 140px; height: 0.85rem; margin-bottom: 0.4rem;"></span>
+                      <span class="skeleton block" style="width: 90px; height: 0.7rem;"></span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="skeleton" style="width: 135px; height: 1rem;"></span></td>
+                <td><span class="skeleton" style="width: 46px; height: 1rem;"></span></td>
+                <td><span class="skeleton skel-bar" style="width: 96px; height: 1.4rem;"></span></td>
+                <td class="text-end">
+                  <span class="skeleton" style="width: 34px; height: 34px; border-radius: 10px;"></span>
+                </td>
+              </tr>
+              <tr class="skeleton-row">
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="skeleton" style="width: 32px; height: 32px; border-radius: 50%;"></div>
+                    <div>
+                      <span class="skeleton block" style="width: 120px; height: 0.85rem; margin-bottom: 0.4rem;"></span>
+                      <span class="skeleton block" style="width: 76px; height: 0.7rem;"></span>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="skeleton" style="width: 145px; height: 1rem;"></span></td>
+                <td><span class="skeleton" style="width: 52px; height: 1rem;"></span></td>
+                <td><span class="skeleton skel-bar" style="width: 96px; height: 1.4rem;"></span></td>
+                <td class="text-end">
+                  <span class="skeleton" style="width: 34px; height: 34px; border-radius: 10px;"></span>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -276,6 +333,119 @@
       </div>
     </div>
   </div>
+
+  <div class="modal fade" id="modalPerfilUsuario" tabindex="-1" aria-labelledby="modalPerfilUsuarioLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <div id="perfilAvatar" class="avatar-circle"
+                        style="width: 50px; height: 50px; font-size: 1.15rem; background: var(--primary-gradient);">US</div>
+                        <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="modal-title fw-bold text-dark mb-0" id="perfilNombre">
+                            <span class="skeleton block" style="width: 150px; height: 1.1rem; vertical-align: middle;"></span>
+                            </h5>
+                            <span id="perfilRolBadge" class="badge bg-light text-muted border">Empleado</span>
+                        </div>
+                        <small class="text-muted" id="perfilCargo">Cargo / Departamento</small>
+                        </div>
+                    </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body p-4">
+                    <div class="p-3 mb-3 bg-light rounded-4 border">
+                        <h6 class="fw-bold text-dark mb-3" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-id-card text-danger me-2"></i>Información Corporativa
+                        </h6>
+                        <div class="row g-3">
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Departamento / Área</small>
+                            <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilArea">
+                            <i class="fa-solid fa-building text-danger"></i> -
+                            </span>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Cargo / Puesto</small>
+                            <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilPuesto">
+                            <i class="fa-solid fa-briefcase text-danger"></i> -
+                            </span>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Fecha de Ingreso</small>
+                            <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilFechaIngreso">
+                            <i class="fa-solid fa-calendar-day text-danger"></i> -
+                            </span>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Antigüedad Laboral</small>
+                            <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilAntiguedad">
+                            <i class="fa-solid fa-clock-rotate-left text-danger"></i> -
+                            </span>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Rol en el Sistema</small>
+                            <span class="text-dark fw-bold d-flex align-items-center gap-2 mt-1" id="perfilRolTexto">
+                            <i class="fa-solid fa-user-shield text-danger"></i> -
+                            </span>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">ID de Usuario (UID)</small>
+                            <span class="text-muted text-truncate d-block mt-1 font-monospace" style="font-size: 0.725rem;"
+                            id="perfilUid">-</span>
+                        </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-4 border">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0" style="font-size: 0.85rem;">
+                            <i class="fa-solid fa-umbrella-beach text-danger me-2"></i>Saldos de Vacaciones (LFT México)
+                        </h6>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">2026</span>
+                        </div>
+                        <div class="row g-2 mb-3 text-center">
+                        <div class="col-4">
+                            <div class="p-2 bg-white rounded-3 border">
+                            <small class="text-muted d-block" style="font-size: 0.75rem;">Saldo Total</small>
+                            <strong class="fs-6 text-dark" id="perfilSaldoTotal">0 días</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 bg-white rounded-3 border">
+                            <small class="text-muted d-block" style="font-size: 0.75rem;">Disponibles</small>
+                            <strong class="fs-6 text-success" id="perfilSaldoDisponible">0 días</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 bg-white rounded-3 border">
+                            <small class="text-muted d-block" style="font-size: 0.75rem;">Utilizados</small>
+                            <strong class="fs-6 text-muted" id="perfilSaldoTomados">0 días</strong>
+                            </div>
+                        </div>
+                        </div>
+                        <div>
+                        <div class="d-flex justify-content-between small fw-semibold text-muted mb-1">
+                            <span>Disponibilidad Actual</span>
+                            <span id="perfilPctTexto">0% disponible</span>
+                        </div>
+                        <div class="progress" style="height: 8px; border-radius: 10px;">
+                            <div id="perfilProgressBar" class="progress-bar bg-danger" role="progressbar" style="width: 0%;"
+                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="/app.js"></script>

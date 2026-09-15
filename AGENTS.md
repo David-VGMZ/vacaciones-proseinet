@@ -3,11 +3,13 @@
 Vacation/leave manager ("Gestor de Vacaciones") for Proseinet. Vanilla ES-module web app deployed to Firebase Hosting, backed by Firebase Auth + Cloud Firestore, browser-only (Mexico LFT leave rules).
 
 ## Commands
+
 - No build, test, lint, or typecheck tooling exists. Verifying changes = reading the code; there is nothing to run.
 - `npm start` is `node index.html` and is **broken** — do not use or "fix" it.
 - Firebase CLI (15.x) is installed globally. Local preview: `firebase serve` (serves `public/`). Deploy: `firebase deploy`.
 
 ## Architecture
+
 - `public/` is the entire site (`firebase.json` → `hosting.public`). HTML/JS/CSS only; no bundler or framework.
 - Firebase SDK is imported at runtime from `https://www.gstatic.com/firebasejs/10.7.1/firebase-*.js` ES modules. The `firebase` npm dependency (v12) is **not used** — keep using the CDN 10.7.1 import style in any new code.
 - `index.html` (dashboard) + every page loads `/app.js` (hub) and `/firebase-config.js`. `app.js` owns the auth gate (`onAuthStateChanged` redirects to `/login.html`), Firestore `onSnapshot` listeners for `usuarios` + `solicitudes`, and the global `AppState` object with dashboard rendering.
@@ -16,6 +18,7 @@ Vacation/leave manager ("Gestor de Vacaciones") for Proseinet. Vanilla ES-module
 - Circular imports exist (`app.js` ↔ page modules); safe because cross-module bindings are only used inside functions, never at module top level. Keep it that way.
 
 ## Firebase specifics
+
 - Project (`firebase.json` site): `vacaciones-proseinet-34230`; `.firebaserc` default project is `vacaciones-proseinet` (different IDs — deploy targets the site).
 - `cleanUrls: true` + `trailingSlash: false` → nav links are extensionless (`/solicitudes` → `solicitudes.html`, `/calendario`, `/empleados`, `/configuracion`). New pages must match this.
 - `public/firebase-config.js` has the public web config hardcoded (normal for Firebase). Front-end role checks (`rol === 'operador'`, see `verificarRolOperador` in `configuracion.js`) are cosmetic; security comes from Firestore rules.
@@ -26,7 +29,8 @@ Vacation/leave manager ("Gestor de Vacaciones") for Proseinet. Vanilla ES-module
 - Leave balance follows Mexico LFT by seniority (`calcularDiasDerechoLFT` in `app.js`): 12 days after 1 yr, +2/yr up to 32. `cargarPerfilUsuario` auto-recredits `saldoDisponible` on work anniversaries and writes back to Firestore.
 
 ## Conventions / gotchas
+
 - UI text and comments are in Spanish (es-MX). Keep new copy in Spanish.
-- `firebase.json` sets HTML `Cache-Control: no-cache` and assets `max-age=3600`. Manual cache-busting via query strings is relied on (`style.css?v=0.00560`, `calendario.js?v=0.101`) — bump `?v=` when changing CSS or page JS.
+- `firebase.json` sets HTML `Cache-Control: no-cache, no-store, must-revalidate` and all assets (js/css/img) `max-age=0, must-revalidate`. Assets are revalidated by ETag on every load (304 when unchanged), so a deploy is always fresh. Do NOT add `?v=` query strings to asset URLs — versioned URLs were removed in favor of this header-based revalidation.
 - Inline `onclick` handlers (e.g. `cerrarSesion()`, `abrirDetalleDesdeNotificacion()`) call functions that must be explicitly attached to `window` (e.g. `window.cerrarSesion = ...`). Keep that pattern for new globals.
 - Stack/libraries: Bootstrap 5.3, Font Awesome 6.7.2, SweetAlert2, Chart.js (dashboard), all via CDN `<script>` tags.
