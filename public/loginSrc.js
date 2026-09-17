@@ -10,7 +10,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const loginError = document.getElementById('login-error');
 
     btnEntrar.disabled = true;
-    btnEntrar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Cargando...';
+    btnEntrar.innerHTML = '<span class="spinner-border text-light spinner-border-sm" role="status"></span> Cargando...';
     loginError.style.display = 'none';
 
     if (email === '' || password === '') {

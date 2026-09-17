@@ -6,7 +6,7 @@ import { doc, getDoc, getDocs, updateDoc, collection, addDoc, query, where, orde
 import { auth, db } from './firebase-config.js';
 
 // ==========================================
-// GESTOR DE VACACIONES - PROSEINET (app.js)
+// GESTOR DE VACACIONES - PROSEINET
 // ==========================================
 
 export const nombresFeriados = {
