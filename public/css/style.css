@@ -94,7 +94,7 @@ body {
 
 .nav-link-custom:hover {
     color: #f5e8e8;
-    background-color: #9b1515;
+    background-color: #b31919;
 }
 
 .nav-link-custom:hover i {
@@ -440,6 +440,7 @@ body {
 }
 
 .btn-proseinet.active {
+    background-color: #b81b1b;
     color: #ffffff;
     transform: translateY(0px);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
