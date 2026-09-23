@@ -1,7 +1,6 @@
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { auth } from "./firebase-config.js";
 
-// Login auth
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
@@ -19,13 +18,10 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     }
 
     try {
-        // Autenticación real con Firebase
         await signInWithEmailAndPassword(auth, email, password);
-        // Si es exitoso, redirigimos al inicio
         window.location.href = '/';
     } catch (error) {
         console.error("Error de Firebase:", error.code);
-        // Manejo de errores amigable
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             mostrarError('Correo electrónico o contraseña incorrectos');
         } else if (error.code === 'auth/too-many-requests') {
@@ -43,7 +39,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     }
 });
 
-// Toggle password logic (Mantenemos tu lógica intacta)
 const passwordInput = document.getElementById('login-pass');
 const togglePassword = document.getElementById('toggle-password');
 

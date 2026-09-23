@@ -24,7 +24,7 @@ Vacation/leave manager ("Gestor de Vacaciones") for Proseinet. Vanilla ES-module
 - `public/firebase-config.js` has the public web config hardcoded (normal for Firebase). Front-end role checks (`rol === 'operador'`, see `verificarRolOperador` in `configuracion.js`) are cosmetic; security comes from Firestore rules.
 - Firestore collections:
   - `usuarios`: `nombre`, `cargo`, `area`, `rol`, `fechaIngreso`, `saldoTotal`, `saldoDisponible`, `ultimoAnioAcreditado`, `avatarIniciales`.
-  - `solicitudes`: `uid_empleado`, `empleado`, `cargo`, `iniciales`, `avatarBg`, `fechaInicio`, `fechaFin`, `fechasTexto`, `dias`, `tipo`, `motivo`, `estado` (`pendiente|aprobado|rechazado`), `creadoEn`.
+  - `solicitudes`: `uid_empleado`, `empleado`, `cargo`, `iniciales`, `avatarBg`, `fechaInicio`, `fechaFin`, `fechasTexto`, `dias`, `tipo`, `motivo`, `estado` (`pendiente|aprobado|rechazado`), `creadoEn`, `aprobadoEn` (se escribe al aprobar; el KPI "Aprobadas este Año" usa `aprobadoEn`, con `creadoEn` como respaldo).
 - Approving a request decrements the employee's `saldoDisponible` (`app.js`). Requested days = weekdays excluding Mexican holidays (`nombresFeriados` / `FERIADOS_OFICIALES_MX` in `app.js`).
 - Leave balance follows Mexico LFT by seniority (`calcularDiasDerechoLFT` in `app.js`): 12 days after 1 yr, +2/yr up to 32. `cargarPerfilUsuario` auto-recredits `saldoDisponible` on work anniversaries and writes back to Firestore.
 

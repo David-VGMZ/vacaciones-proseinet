@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "vacaciones-proseinet-34230",
+    "site": "vacaciones-proseinet",
     "public": "public",
     "cleanUrls": true,
     "trailingSlash": false,

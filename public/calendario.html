@@ -121,7 +121,6 @@
 </head>
 
 <body>
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="mainSidebar">
         <div>
             <div class="brand-section d-flex align-items-center gap-3">
@@ -167,7 +166,6 @@
         </div>
     </aside>
 
-    <!-- TOP HEADER -->
     <header class="top-header">
         <div class="d-flex align-items-center gap-3">
             <button class="btn btn-light d-lg-none p-2 border-0" id="btnToggleSidebar">
@@ -209,10 +207,6 @@
                     <li><a class="dropdown-item dropdown-item-custom" href="#" data-bs-toggle="modal" data-bs-target="#modalPerfilUsuario"><i
                                 class="fa-solid fa-user me-2 text-danger"></i>
                             Mi Perfil</a></li>
-                    <li><a class="dropdown-item dropdown-item-custom" href="/configuracion"><i
-                                class="fa-solid fa-sliders me-2 text-muted"></i>
-                            Preferencias</a></li>
-                    <li>
                         <hr class="dropdown-divider opacity-50">
                     </li>
                     <li><a onclick="cerrarSesion()" id="logoutUI" class="dropdown-item dropdown-item-custom text-danger"
@@ -222,7 +216,6 @@
         </div>
     </header>
 
-    <!-- MAIN CONTENT -->
     <main class="main-content">
         <div class="content-wrapper">
             <div class="row g-4 align-items-stretch">
@@ -230,7 +223,6 @@
                 <div class="col-12 col-md-3 col-xl-2">
                     <div class="dashboard-card h-100 d-flex flex-column p-3">
 
-                        <!-- Perfil -->
                         <div class="text-center mb-3">
                             <div id="userInicialesCalendar" class="avatar-circle mx-auto mb-2"
                                 style="width: 54px; height: 54px; font-size: 1.2rem;">
@@ -246,7 +238,6 @@
 
                         <hr class="opacity-25 my-2">
 
-                        <!-- KPIs del Usuario -->
                         <div class="py-2">
                             <div class="mb-3">
                                 <small class="text-muted d-block fw-semibold" style="font-size: 0.75rem;">Días de
@@ -273,23 +264,19 @@
 
                         <hr class="opacity-25 my-2">
 
-                        <!-- Lista de Fechas Tomadas -->
                         <h6 class="fw-bold text-dark mt-2 mb-3" style="font-size: 0.8rem;">
                             <i class="fa-solid fa-clock-rotate-left text-danger me-1"></i> Fechas Tomadas
                         </h6>
                         <div class="flex-grow-1 overflow-auto" style="max-height: 250px;">
                             <ul id="calFechasList" class="list-unstyled mb-0">
-                                <!-- Renderizado por JS -->
                             </ul>
                         </div>
 
                     </div>
                 </div>
 
-                <!-- COLUMNA DERECHA: Calendario UI -->
                 <div class="col-12 col-md-9 col-xl-10">
                     <div class="dashboard-card h-100">
-                        <!-- Controles del mes -->
                         <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
                             <button class="btn btn-sm btn-light fw-semibold" id="btnPrevMonth"><i
                                     class="fa-solid fa-chevron-left"></i><small class="d-none d-sm-inline mx-2 align-middle">Anterior</small></button>
@@ -298,7 +285,6 @@
                                     class="fa-solid fa-chevron-right"></i></button>
                         </div>
 
-                        <!-- Días de la semana (Lunes a Domingo) -->
                         <div class="calendar-grid mb-2">
                             <div class="calendar-day-header">Lun</div>
                             <div class="calendar-day-header">Mar</div>
@@ -309,7 +295,6 @@
                             <div class="calendar-day-header text-danger">Dom</div>
                         </div>
 
-                        <!-- Cuadrícula dinámica -->
                         <div id="calendarBody" class="calendar-grid"></div>
                     </div>
                 </div>

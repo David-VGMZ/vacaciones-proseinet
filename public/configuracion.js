@@ -54,14 +54,12 @@ export function calcularAntiguedadExacta(fechaIngresoStr) {
     const mesesAntiguedad = Math.max(0, m);
     const diasAntiguedad = Math.max(0, d);
 
-    // Días que corresponden según LFT para la antigüedad actual del colaborador
     const totalDiasDerecho = calcularDiasDerechoLFT(aniosAntiguedad);
     const detalleAniversarios = [];
 
     for (let i = 1; i <= aniosAntiguedad; i++) {
         const diasAnio = calcularDiasDerechoLFT(i);
 
-        // Fecha en que se cumplió este aniversario
         const fechaCumplida = new Date(fechaIng);
         fechaCumplida.setFullYear(fechaIng.getFullYear() + i);
 
@@ -73,7 +71,6 @@ export function calcularAntiguedadExacta(fechaIngresoStr) {
         });
     }
 
-    // Próximo aniversario
     const proximoAnio = fechaIng.getFullYear() + aniosAntiguedad + 1;
     const proximoAnivFecha = new Date(fechaIng);
     proximoAnivFecha.setFullYear(proximoAnio);
@@ -107,14 +104,11 @@ export function renderConfiguracionPage() {
     if (!container) return;
 
     if (AppState.cargando && AppState.cargando.feriado) {
-        // Ya se maneja en renderProximoFeriado, pero también podemos mostrar spinner aquí
-        // si la sección de configuración muestra el feriado
         return;
     }
 
     const esOperador = verificarRolOperador();
 
-    // Actualizar badge de rol en el banner superior
     const rolBadge = document.getElementById('rolIndicatorBadge');
     if (rolBadge) {
         if (esOperador) {
@@ -130,7 +124,6 @@ export function renderConfiguracionPage() {
         }
     }
 
-    // Mostrar u ocultar alerta si no es operador
     const alertaNoOperador = document.getElementById('alertaNoOperador');
     if (alertaNoOperador) {
         if (!esOperador && AppState.usuario.uid) {
@@ -140,10 +133,7 @@ export function renderConfiguracionPage() {
         }
     }
 
-    // Actualizar KPIs
     actualizarKPIsConfig();
-
-    // Renderizar tabla de empleados
     renderTablaEmpleadosConfig();
 }
 
@@ -155,10 +145,7 @@ function actualizarKPIsConfig() {
 
     let totalDiasLFT = 0;
     empleados.forEach(e => {
-        if (e.fechaIngreso && e.fechaIngreso !== 'No registrada') {
-            const calculo = calcularAntiguedadExacta(e.fechaIngreso);
-            totalDiasLFT += calculo.totalDiasDerecho;
-        }
+        totalDiasLFT += Number(e.saldoTotal) || 0;
     });
 
     const kpiTotal = document.getElementById('kpiTotalEmpleados');
@@ -343,7 +330,6 @@ window.abrirModalFechaIngreso = function (empId) {
         avatar.style.background = emp.avatarBg || 'var(--primary-gradient)';
     }
 
-    // Asignar fecha actual si existe
     const inputFecha = document.getElementById('inputFechaIngresoModal');
     if (inputFecha) {
         if (emp.fechaIngreso && emp.fechaIngreso !== 'No registrada' && /^\d{4}-\d{2}-\d{2}$/.test(emp.fechaIngreso)) {
@@ -353,7 +339,6 @@ window.abrirModalFechaIngreso = function (empId) {
         }
     }
 
-    // Actualizar previsualización en vivo
     actualizarPreviewModal(inputFecha ? inputFecha.value : '');
 
     const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -374,7 +359,6 @@ function actualizarPreviewModal(fechaIngresoStr) {
     const nuevoSaldoDispEl = document.getElementById('previewNuevoSaldoDisponible');
     const nuevoSaldoTotalEl = document.getElementById('previewNuevoSaldoTotal');
 
-    // Calcular días ya usados por el colaborador (a través de solicitudes aprobadas o histórico)
     let diasUsados = 0;
     if (AppState.solicitudes && AppState.solicitudes.length > 0) {
         const misAprobadas = AppState.solicitudes.filter(s =>
@@ -418,7 +402,6 @@ function actualizarPreviewModal(fechaIngresoStr) {
     if (nuevoSaldoTotalEl) nuevoSaldoTotalEl.textContent = nuevoSaldoTotal;
     if (nuevoSaldoDispEl) nuevoSaldoDispEl.textContent = nuevoSaldoDisponible;
 
-    // Desglose de cada aniversario cumplido
     if (desgloseContainer) {
         if (calculo.detalleAniversarios.length === 0) {
             desgloseContainer.innerHTML = `
@@ -446,7 +429,6 @@ function actualizarPreviewModal(fechaIngresoStr) {
 }
 
 export function initConfiguracionPage() {
-    // Filtros de departamento
     const filterBtns = document.querySelectorAll('.filter-config-btn');
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
@@ -463,7 +445,6 @@ export function initConfiguracionPage() {
         });
     }
 
-    // Buscador
     const inputSearch = document.getElementById('inputBuscarEmpleadoConfig');
     if (inputSearch) {
         inputSearch.addEventListener('input', (e) => {
@@ -472,7 +453,6 @@ export function initConfiguracionPage() {
         });
     }
 
-    // Listener para actualizar previsualización al cambiar la fecha
     const inputFechaModal = document.getElementById('inputFechaIngresoModal');
     if (inputFechaModal) {
         inputFechaModal.addEventListener('input', (e) => {
@@ -483,7 +463,6 @@ export function initConfiguracionPage() {
         });
     }
 
-    // Botón para guardar y aplicar cálculo
     const btnGuardar = document.getElementById('btnGuardarFechaIngreso');
     if (btnGuardar) {
         btnGuardar.addEventListener('click', async () => {
@@ -509,7 +488,6 @@ export function initConfiguracionPage() {
                 return;
             }
 
-            // Realizar cálculo final
             const calculo = calcularAntiguedadExacta(fechaStr);
 
             let diasUsados = 0;
@@ -544,13 +522,11 @@ export function initConfiguracionPage() {
                     actualizadoEn: new Date().toISOString()
                 });
 
-                // Actualizar en memoria local
                 empleadoSeleccionado.fechaIngreso = fechaStr;
                 empleadoSeleccionado.saldoTotal = nuevoSaldoTotal;
                 empleadoSeleccionado.saldoDisponible = nuevoSaldoDisponible;
                 empleadoSeleccionado.ultimoAnioAcreditado = ultimoAnioAcreditado;
 
-                // Si el empleado editado es el mismo que está logueado, actualizar AppState.usuario
                 if (AppState.usuario && AppState.usuario.uid === empleadoSeleccionado.id) {
                     AppState.usuario.fechaIngreso = fechaStr;
                     AppState.usuario.saldoTotal = nuevoSaldoTotal;
@@ -568,12 +544,10 @@ export function initConfiguracionPage() {
                     }
                 }
 
-                // Cerrar modal
                 const modalEl = document.getElementById('modalAsignarFecha');
                 const bsModal = bootstrap.Modal.getInstance(modalEl);
                 if (bsModal) bsModal.hide();
 
-                // Re-renderizar
                 actualizarKPIsConfig();
                 renderTablaEmpleadosConfig();
 
@@ -607,7 +581,6 @@ window.limpiarBusquedaConfig = function () {
     renderTablaEmpleadosConfig(currentConfigDepto, currentConfigSearch);
 };
 
-// Auto-inicialización si el elemento está presente
 document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('configuracionContainer')) {
         initConfiguracionPage();

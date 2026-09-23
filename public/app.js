@@ -168,7 +168,6 @@ export async function cargarPerfilUsuario(uid) {
             let ultimoAnioAcreditado = data.ultimoAnioAcreditado ?? 0;
             let requiereActualizacionBD = false;
 
-            // Empleado ha cumplido 1 año o más desde su ingreso laboral
             if (data.fechaIngreso && aniosAntiguedad > 0) {
                 const diasCorrespondientes = calcularDiasDerechoLFT(aniosAntiguedad);
 
@@ -228,6 +227,29 @@ export function fechaLocalStr(d = new Date()) {
     return `${d.getFullYear()}-${mes}-${dia}`;
 }
 
+export function normalizarFechaPlan(fecha) {
+    if (!fecha && fecha !== 0) return '';
+    if (typeof fecha === 'string') {
+        const match = fecha.trim().match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T ]|$)/);
+        if (match) {
+            return `${match[1]}-${String(match[2]).padStart(2, '0')}-${String(match[3]).padStart(2, '0')}`;
+        }
+        const f = new Date(fecha);
+        return isNaN(f.getTime()) ? fecha.trim() : fechaLocalStr(f);
+    }
+    if (fecha && typeof fecha.toDate === 'function') return fechaLocalStr(fecha.toDate());
+    if (fecha instanceof Date) return fechaLocalStr(fecha);
+    return String(fecha);
+}
+
+export function normalizarEstado(estado) {
+    const e = (estado || 'pendiente').toString().trim().toLowerCase();
+    if (e.startsWith('aprob')) return 'aprobado';
+    if (e.startsWith('rechaz') || e.startsWith('cancel')) return 'rechazado';
+    if (e === 'pendiente') return 'pendiente';
+    return e;
+}
+
 export async function cargarEmpleadosDesdeFirestore() {
     try {
         const q = query(collection(db, "usuarios"));
@@ -278,16 +300,23 @@ export async function cargarEmpleadosDesdeFirestore() {
 function suscribirSolicitudesFirestore() {
     const q = query(collection(db, "solicitudes"));
     onSnapshot(q, (snapshot) => {
-        AppState.solicitudes = snapshot.docs.map(docSnap => ({
-            idFirestore: docSnap.id,
-            ...docSnap.data()
-        }));
+        AppState.solicitudes = snapshot.docs.map(docSnap => {
+            const d = docSnap.data();
+            return {
+                idFirestore: docSnap.id,
+                ...d,
+                estado: normalizarEstado(d.estado),
+                fechaInicio: normalizarFechaPlan(d.fechaInicio),
+                fechaFin: normalizarFechaPlan(d.fechaFin)
+            };
+        });
 
         AppState.solicitudesCargadas = true;
 
         renderRequestsTable();
         updateKPIs();
         renderProximasAusencias();
+        renderModalAusencias();
         renderProximoFeriado();
         notificaciones();
         cargarInfoUsuarios();
@@ -318,6 +347,7 @@ function inicializarUI() {
         initDetailModal();
         initBuscadorEmpleado();
         renderProximasAusencias();
+        renderModalAusencias();
         renderProximoFeriado();
     }
 
@@ -477,20 +507,29 @@ function updateKPIs() {
 
     const solicitudesVisibles = AppState.solicitudes.filter(s => esSolicitudVisibleParaElUsuario(s));
     const pendientesCount = solicitudesVisibles.filter(s => s.estado === 'pendiente').length;
-    const aprobadasCount = solicitudesVisibles.filter(s => s.estado === 'aprobado').length;
+
+    const aprobadas = AppState.solicitudes.filter(s => s.estado === 'aprobado');
+    const anioActual = new Date().getFullYear();
+    const aprobadasCount = aprobadas.filter(s => {
+        const fechaAprobacion = s.aprobadoEn || s.creadoEn;
+        return fechaAprobacion && new Date(fechaAprobacion).getFullYear() === anioActual;
+    }).length;
 
     const hoyStr = fechaLocalStr();
-    const enVacacionesHoy = solicitudesVisibles.filter(s => {
-        return s.estado === 'aprobado' && s.fechaInicio <= hoyStr && s.fechaFin >= hoyStr;
-    }).length;
+    const personasEnVacacionesHoy = new Set();
+    aprobadas.forEach(s => {
+        if (s.fechaInicio && s.fechaFin && s.fechaInicio <= hoyStr && s.fechaFin >= hoyStr) {
+            personasEnVacacionesHoy.add(s.uid_empleado || `${s.empleado}|${s.cargo}`);
+        }
+    });
 
     const kpiPendientes = document.getElementById('kpiPendientes');
     const kpiAprobadas = document.getElementById('kpiAprobadas');
     const kpiEnVacaciones = document.getElementById('kpiEnVacaciones');
 
-    if (kpiPendientes) { kpiPendientes.textContent = pendientesCount; notifyReveal(kpiPendientes); }
-    if (kpiAprobadas) { kpiAprobadas.textContent = aprobadasCount; notifyReveal(kpiAprobadas); }
-    if (kpiEnVacaciones) { kpiEnVacaciones.innerHTML = `${enVacacionesHoy} <span class="fs-6 text-muted font-normal">personas</span>`; notifyReveal(kpiEnVacaciones); }
+    if (kpiPendientes) { kpiPendientes.innerHTML = `${pendientesCount} <span class="fs-6 text-muted font-normal">solicitud(es)</span>`; notifyReveal(kpiPendientes); }
+    if (kpiAprobadas) { kpiAprobadas.innerHTML = `${aprobadasCount} <span class="fs-6 text-muted font-normal">solicitud(es)</span>`; notifyReveal(kpiAprobadas); }
+    if (kpiEnVacaciones) { kpiEnVacaciones.innerHTML = `${personasEnVacacionesHoy.size} <span class="fs-6 text-muted font-normal">empleado(s)</span>`; notifyReveal(kpiEnVacaciones); }
 }
 
 function initVacationCalculator() {
@@ -759,7 +798,7 @@ function initDetailModal() {
 
             try {
                 const solRef = doc(db, "solicitudes", solicitudSeleccionada.idFirestore);
-                await updateDoc(solRef, { estado: "aprobado" });
+                await updateDoc(solRef, { estado: "aprobado", aprobadoEn: new Date().toISOString() });
 
                 const userRef = doc(db, "usuarios", solicitudSeleccionada.uid_empleado);
                 const userSnap = await getDoc(userRef);
@@ -1153,7 +1192,7 @@ export function rellenarPerfilUsuario() {
         document.getElementById('perfilFechaIngreso').innerHTML = `<i class="fa-solid fa-calendar text-danger"></i>${fechaTexto}`;
     }
     if (document.getElementById('perfilAntiguedad')) {
-        document.getElementById('perfilAntiguedad').innerHTML = `<i class="fa-solid fa-clock-rotate text-danger"></i>${antiguedadTexto}`;
+        document.getElementById('perfilAntiguedad').innerHTML = `<i class="fa-solid fa-clock-rotate-left text-danger"></i>${antiguedadTexto}`;
     }
 
     const total = u.saldoTotal;
@@ -1184,3 +1223,61 @@ export function mostrarPerfilUsuario() {
 }
 
 window.mostrarPerfilUsuario = mostrarPerfilUsuario;
+
+function renderModalAusencias() {
+    const container = document.querySelector('#ausenciasList');
+    if (!container) return;
+
+    if (!AppState.solicitudesCargadas) {
+        container.innerHTML = skeletonItemsAusencias();
+        return;
+    }
+
+    const hoyStr = fechaLocalStr();
+    const ausencias = AppState.solicitudes
+        .filter(s => s.estado === 'aprobado' && s.fechaFin >= hoyStr)
+        .sort((a, b) => new Date(a.fechaInicio + 'T00:00:00') - new Date(b.fechaInicio + 'T00:00:00'));
+
+    if (ausencias.length === 0) {
+        container.innerHTML = `<div class="text-center text-muted small py-3">No hay ausencias programadas próximamente</div>`;
+        notifyReveal(container);
+        return;
+    }
+
+    let html = '';
+    ausencias.forEach(a => {
+        const enCurso = a.fechaInicio <= hoyStr && a.fechaFin >= hoyStr;
+        const badgeText = enCurso ?
+            `<small class="d-block text-success fw-bold" style="font-size: 0.7rem;"><i class="fa-solid fa-plane-departure me-1"></i>En Curso</small>` :
+            `<small class="d-block text-muted" style="font-size: 0.7rem;"><i class="fa-solid fa-calendar me-1"></i>Próximamente</small>`;
+
+        html += `
+            <div class="absence-item">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="avatar-circle" style="width: 36px; height: 36px; font-size: 0.85rem; background: ${a.avatarBg || '#0284c7'};">${a.iniciales}</div>
+                    <div>
+                        <strong class="d-block text-dark lh-1" style="font-size: 0.875rem;">${a.empleado}</strong>
+                        <small class="text-muted" style="font-size: 0.75rem;">${a.cargo}</small>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-light text-dark border fw-semibold mb-1 d-inline-block">${a.fechasTexto.split(' 20')[0]}</span>
+                    ${badgeText}
+                </div>
+            </div>`;
+    });
+    container.innerHTML = html;
+    notifyReveal(container);
+}
+
+function mostrarProximasAusencias() {
+    const modalEl = document.getElementById('modalAusencias');
+    if (!modalEl) return;
+
+    renderModalAusencias();
+
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    bsModal.show();
+}
+
+window.mostrarProximasAusencias = mostrarProximasAusencias;

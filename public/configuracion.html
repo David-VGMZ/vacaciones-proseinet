@@ -20,7 +20,6 @@
 
 <body>
 
-  <!-- SIDEBAR -->
   <aside class="sidebar" id="mainSidebar">
     <div>
       <div class="brand-section d-flex align-items-center gap-3">
@@ -63,7 +62,6 @@
     </div>
   </aside>
 
-  <!-- TOP HEADER -->
   <header class="top-header">
     <div class="d-flex align-items-center gap-3">
       <button class="btn btn-light d-lg-none p-2 border-0" id="btnToggleSidebar">
@@ -117,11 +115,9 @@
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
   <main class="main-content" id="configuracionContainer">
     <div class="content-wrapper">
 
-      <!-- HEADER BANNER -->
       <div class="p-4 rounded-4 bg-white border shadow-sm mb-4">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
           <div>
@@ -139,7 +135,6 @@
         </div>
       </div>
 
-      <!-- ALERTA SI NO ES OPERADOR -->
       <div id="alertaNoOperador" class="alert alert-warning border-0 shadow-sm rounded-4 p-3 d-none mb-4" role="alert">
         <div class="d-flex align-items-center gap-3">
           <div class="p-3 kpi-icon-warning rounded-3">
@@ -156,7 +151,6 @@
         </div>
       </div>
 
-      <!-- KPI STATS CARDS -->
       <div class="row g-3 mb-4">
         <div class="col-12 col-sm-6 col-xl-3">
           <div class="p-3 rounded-4 bg-white shadow-sm h-100 d-flex align-items-center gap-3">
@@ -207,7 +201,6 @@
         </div>
       </div>
 
-      <!-- DIRECTORY & ACTIONS CARD -->
       <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
           <div>
@@ -318,7 +311,6 @@
     </div>
   </main>
 
-  <!-- MODAL ASIGNAR FECHA DE INGRESO -->
   <div class="modal fade" id="modalAsignarFecha" tabindex="-1" aria-labelledby="modalAsignarFechaLabel"
     aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
@@ -336,7 +328,6 @@
         </div>
 
         <div class="modal-body p-4">
-          <!-- FORMULARIO FECHA -->
           <div class="p-3 bg-light rounded-4 mb-3 border">
             <label for="inputFechaIngresoModal" class="form-label fw-bold text-dark mb-2">
               <i class="fa-solid fa-calendar-day text-danger me-2"></i>Fecha de Ingreso a la Empresa
@@ -355,7 +346,6 @@
             </div>
           </div>
 
-          <!-- PREVIEW DINÁMICO DE CÁLCULO LFT -->
           <div id="previewCalculoContainer" class="p-3 bg-white border rounded-4 shadow-sm mb-3">
             <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
               <strong class="text-dark d-flex align-items-center gap-2">
@@ -391,7 +381,6 @@
               </div>
             </div>
 
-            <!-- TABLA / DESGLOSE DE ANIVERSARIOS CUMPLIDOS -->
             <div class="mb-3">
               <small class="fw-bold text-dark d-block mb-2">Desglose de días otorgados por aniversario cumplido:</small>
               <div id="desgloseAniversariosContainer" class="p-2 bg-light rounded-3 border"
@@ -401,7 +390,6 @@
               </div>
             </div>
 
-            <!-- RESULTADO DE SALDO FINAL -->
             <div class="p-3 bg-danger-subtle rounded-3 d-flex justify-content-between align-items-center">
               <div>
                 <strong class="d-block text-danger fs-6 lh-1">Nuevo Saldo Disponible Calculado:</strong>
